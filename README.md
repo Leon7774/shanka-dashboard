@@ -1,13 +1,23 @@
-# React + TypeScript + Vite
+# Shanka Sales Dashboard
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+This is a sales dashboard for Shanka Retail. It shows key performance indicators (KPI's), sales forecasting, and sales trends.
 
-Currently, two official plugins are available:
+## Tech Stack
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- Next.js
+- TypeScript
+- React
+- Tailwind CSS
+- Recharts
+- Vite
+- AWS Lambda
+- Supabase
 
-## React Compiler
+Dataset from
+
+- [Online Retail dataset from UCI Machine Learning Repository](https://archive.ics.uci.edu/dataset/352/online+retail)
+
+<!-- ## React Compiler
 
 The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
 
@@ -70,4 +80,4 @@ export default defineConfig([
     },
   },
 ])
-```
+``` -->
