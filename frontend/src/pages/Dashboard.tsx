@@ -32,7 +32,19 @@ import {
     Users,
     TrendingUp,
     AlertTriangle,
+    Filter,
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
+import { LatestSales } from "@/components/LatestSales";
+import { supabase } from "@/lib/supabase";
 
 export default function Dashboard() {
     const [kpi, setKpi] = useState<KPI | null>(null);
@@ -45,10 +57,42 @@ export default function Dashboard() {
     } | null>(null);
     const [loading, setLoading] = useState(true);
 
+    const [dateRange, setDateRange] = useState<{
+        start: string;
+        end: string;
+    }>({ start: "", end: "" });
+    const [selectedCountry, setSelectedCountry] = useState<string>("All");
+    const [availableCountries, setAvailableCountries] = useState<string[]>([]);
+
+    useEffect(() => {
+        async function fetchCountries() {
+            const { data } = await supabase
+                .from("sales")
+                .select("Country")
+                .not("Country", "is", null);
+
+            if (data) {
+                // Get unique countries
+                const uniqueCountries = Array.from(
+                    new Set(data.map((item) => item.Country))
+                ).sort();
+                setAvailableCountries(uniqueCountries);
+            }
+        }
+        fetchCountries();
+    }, []);
+
     useEffect(() => {
         async function load() {
+            setLoading(true);
             try {
-                const data = await loadDashboardData();
+                const data = await loadDashboardData({
+                    startDate: dateRange.start
+                        ? new Date(dateRange.start)
+                        : null,
+                    endDate: dateRange.end ? new Date(dateRange.end) : null,
+                    country: selectedCountry,
+                });
                 setKpi(data.kpi);
                 setCountrySales(data.countrySales);
                 setProductSales(data.productSales);
@@ -61,7 +105,7 @@ export default function Dashboard() {
             }
         }
         load();
-    }, []);
+    }, [dateRange, selectedCountry]);
 
     if (loading) {
         return (
@@ -78,7 +122,7 @@ export default function Dashboard() {
 
     return (
         <div className="bg-background p-8 space-y-8">
-            <div className="flex justify-between items-center">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
                     <h1 className="text-4xl font-bold tracking-tight text-foreground">
                         Overview
@@ -87,8 +131,70 @@ export default function Dashboard() {
                         Retail Performance Dashboard
                     </p>
                 </div>
-                <div className="text-sm text-muted-foreground">
-                    Last updated: {new Date().toLocaleDateString()}
+
+                {/* Filters */}
+                <div className="flex flex-wrap items-center gap-2 bg-card p-2 rounded-lg border shadow-sm">
+                    <div className="flex items-center gap-2">
+                        <Filter className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm font-medium">Filters:</span>
+                    </div>
+
+                    <Input
+                        type="date"
+                        value={dateRange.start}
+                        onChange={(e) =>
+                            setDateRange((prev) => ({
+                                ...prev,
+                                start: e.target.value,
+                            }))
+                        }
+                        className="w-[140px] h-8"
+                    />
+                    <span className="text-muted-foreground">-</span>
+                    <Input
+                        type="date"
+                        value={dateRange.end}
+                        onChange={(e) =>
+                            setDateRange((prev) => ({
+                                ...prev,
+                                end: e.target.value,
+                            }))
+                        }
+                        className="w-[140px] h-8"
+                    />
+
+                    <Select
+                        value={selectedCountry}
+                        onValueChange={setSelectedCountry}
+                    >
+                        <SelectTrigger className="w-[160px] h-8">
+                            <SelectValue placeholder="Select Country" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="All">All Countries</SelectItem>
+                            {availableCountries.map((country) => (
+                                <SelectItem key={country} value={country}>
+                                    {country}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+
+                    {(dateRange.start ||
+                        dateRange.end ||
+                        selectedCountry !== "All") && (
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 px-2 text-destructive hover:text-destructive"
+                            onClick={() => {
+                                setDateRange({ start: "", end: "" });
+                                setSelectedCountry("All");
+                            }}
+                        >
+                            Reset
+                        </Button>
+                    )}
                 </div>
             </div>
 
@@ -150,9 +256,9 @@ export default function Dashboard() {
                 </Card>
             </div>
 
-            {/* Sales Forecast */}
-            <div className="grid gap-4 md:grid-cols-1">
-                <Card>
+            {/* Sales Forecast and Latest Sales */}
+            <div className="grid gap-4 md:grid-cols-7">
+                <Card className="col-span-4">
                     <CardHeader>
                         <CardTitle>Sales Forecasting & Trends</CardTitle>
                         <CardDescription>
@@ -221,60 +327,74 @@ export default function Dashboard() {
                         </div>
                     </CardContent>
                 </Card>
+                <div className="col-span-3">
+                    <LatestSales />
+                </div>
             </div>
 
             {/* Charts Row */}
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-                <Card className="col-span-4">
-                    <CardHeader>
-                        <CardTitle>Sales by Country</CardTitle>
-                        <CardDescription>
-                            Top 10 performing regions
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent className="pl-2">
-                        <ResponsiveContainer width="100%" height={350}>
-                            <BarChart data={countrySales}>
-                                <XAxis
-                                    dataKey="country"
-                                    stroke="#888888"
-                                    fontSize={12}
-                                    tickLine={false}
-                                    axisLine={false}
-                                    angle={-45}
-                                    textAnchor="end"
-                                    height={70}
-                                />
-                                <YAxis
-                                    stroke="#888888"
-                                    fontSize={12}
-                                    tickLine={false}
-                                    axisLine={false}
-                                    tickFormatter={(value) => `$${value}`}
-                                />
-                                <Tooltip
-                                    contentStyle={{
-                                        backgroundColor: "var(--background)",
-                                        borderColor: "var(--border)",
-                                        borderRadius: "8px",
-                                    }}
-                                    labelStyle={{ color: "var(--foreground)" }}
-                                    itemStyle={{ color: "var(--primary)" }}
-                                    formatter={(value: number) => [
-                                        `$${value.toLocaleString()}`,
-                                        "Sales",
-                                    ]}
-                                />
-                                <Bar
-                                    dataKey="sales"
-                                    fill="currentColor"
-                                    radius={[4, 4, 0, 0]}
-                                    className="fill-primary"
-                                />
-                            </BarChart>
-                        </ResponsiveContainer>
-                    </CardContent>
-                </Card>
+                {selectedCountry === "All" && (
+                    <Card className="col-span-4">
+                        <CardHeader>
+                            <CardTitle>Sales by Country</CardTitle>
+                            <CardDescription>
+                                Top 10 performing regions
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent className="pl-2">
+                            <div className="w-full h-[350px]">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <BarChart data={countrySales}>
+                                        <XAxis
+                                            dataKey="country"
+                                            stroke="#888888"
+                                            fontSize={12}
+                                            tickLine={false}
+                                            axisLine={false}
+                                            angle={-45}
+                                            textAnchor="end"
+                                            height={70}
+                                        />
+                                        <YAxis
+                                            stroke="#888888"
+                                            fontSize={12}
+                                            tickLine={false}
+                                            axisLine={false}
+                                            tickFormatter={(value) =>
+                                                `$${value}`
+                                            }
+                                        />
+                                        <Tooltip
+                                            contentStyle={{
+                                                backgroundColor:
+                                                    "var(--background)",
+                                                borderColor: "var(--border)",
+                                                borderRadius: "8px",
+                                            }}
+                                            labelStyle={{
+                                                color: "var(--foreground)",
+                                            }}
+                                            itemStyle={{
+                                                color: "var(--primary)",
+                                            }}
+                                            formatter={(value: number) => [
+                                                `$${value.toLocaleString()}`,
+                                                "Sales",
+                                            ]}
+                                        />
+                                        <Bar
+                                            dataKey="sales"
+                                            fill="currentColor"
+                                            radius={[4, 4, 0, 0]}
+                                            className="fill-primary"
+                                        />
+                                    </BarChart>
+                                </ResponsiveContainer>
+                            </div>
+                        </CardContent>
+                    </Card>
+                )}
 
                 <Card className="col-span-3 h-full">
                     <div className="flex flex-col h-full gap-4">
@@ -287,31 +407,41 @@ export default function Dashboard() {
                             </CardHeader>
                             <CardContent>
                                 <div className="space-y-4">
-                                    {productSales.slice(0, 4).map((item, i) => (
-                                        <div
-                                            className="flex items-center"
-                                            key={i}
-                                        >
-                                            <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
-                                                {i + 1}
+                                    {performance?.topPerformers
+                                        .slice(0, 4)
+                                        .map((item, i) => (
+                                            <div
+                                                className="flex items-center"
+                                                key={i}
+                                            >
+                                                <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
+                                                    {i + 1}
+                                                </div>
+                                                <div className="ml-4 space-y-1">
+                                                    <p
+                                                        className="text-sm font-medium leading-none line-clamp-1"
+                                                        title={item.product}
+                                                    >
+                                                        {item.product}
+                                                    </p>
+                                                    <p className="text-sm text-muted-foreground">
+                                                        $
+                                                        {item.sales.toLocaleString()}{" "}
+                                                        <span className="text-xs opacity-70">
+                                                            ({item.quantity}{" "}
+                                                            sold • $
+                                                            {item.price?.toFixed(
+                                                                2
+                                                            )}
+                                                            )
+                                                        </span>
+                                                    </p>
+                                                </div>
+                                                <div className="ml-auto font-medium">
+                                                    <TrendingUp className="h-4 w-4 text-green-500 inline mr-1" />
+                                                </div>
                                             </div>
-                                            <div className="ml-4 space-y-1">
-                                                <p
-                                                    className="text-sm font-medium leading-none line-clamp-1"
-                                                    title={item.product}
-                                                >
-                                                    {item.product}
-                                                </p>
-                                                <p className="text-sm text-muted-foreground">
-                                                    $
-                                                    {item.sales.toLocaleString()}
-                                                </p>
-                                            </div>
-                                            <div className="ml-auto font-medium">
-                                                <TrendingUp className="h-4 w-4 text-green-500 inline mr-1" />
-                                            </div>
-                                        </div>
-                                    ))}
+                                        ))}
                                 </div>
                             </CardContent>
                         </div>

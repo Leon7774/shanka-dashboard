@@ -29,43 +29,25 @@ const handler = async (event) => {
         console.log(`Fetch request for view: ${view}`);
         let result = { data: null, error: null };
 
-        switch (view) {
-            case "kpi":
-                result = await supabase
-                    .from("view_kpi_summary")
-                    .select("*")
-                    .single();
-                break;
-            case "country":
-                result = await supabase
-                    .from("view_sales_by_country")
-                    .select("*")
-                    .order("total_revenue", { ascending: false })
-                    .limit(10);
-                break;
-            case "products":
-                result = await supabase
-                    .from("view_product_performance")
-                    .select("*")
-                    .order("total_revenue", { ascending: false });
-                break;
-            case "forecast":
-                result = await supabase
-                    .from("view_monthly_sales")
-                    .select("*")
-                    .order("month", { ascending: true });
-                break;
-            default:
-                // Fallback to original logic (simplified) or return error
-                // For backward compatibility or debug:
-                const limit = Number(event.queryStringParameters?.limit) || 10;
-                const offset = Number(event.queryStringParameters?.offset) || 0;
-                const range = offset * limit;
-                result = await supabase
-                    .from("sales")
-                    .select("*")
-                    .range(range, range + limit);
-        }
+        // Extract filters
+        const { startDate, endDate, country } =
+            event.queryStringParameters || {};
+
+        console.log(`Calling RPC get_dashboard_stats with:`, {
+            filter_start_date: startDate,
+            filter_end_date: endDate,
+            filter_country: country,
+        });
+
+        // Call proper RPC function based on user request?
+        // Actually, the new plan is to standardise on ONE rpc call for the dashboard.
+        // It returns everything.
+
+        result = await supabase.rpc("get_dashboard_stats", {
+            filter_start_date: startDate || null,
+            filter_end_date: endDate || null,
+            filter_country: country || null,
+        });
 
         if (result.error) {
             console.error("Supabase error:", result.error);
