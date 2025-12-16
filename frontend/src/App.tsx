@@ -3,6 +3,7 @@ import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import AddSale from "./pages/AddSale";
 import Layout from "./components/Layout";
+import { ThemeToggle } from "./components/ThemeToggle";
 
 function App() {
     return (
@@ -14,6 +15,7 @@ function App() {
                     <Route path="/add-sale" element={<AddSale />} />
                 </Route>
             </Routes>
+            <ThemeToggle />
         </Router>
     );
 }
