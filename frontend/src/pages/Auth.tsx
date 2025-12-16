@@ -30,8 +30,8 @@ export default function Auth() {
 
             {/* Updated card for Light Background: Dark text, subtle border/shadow */}
 
-            <Card className="flex flex-row items-center z-10 shadow-2xl animate-in fade-in zoom-in duration-500 bg-white/70 backdrop-blur-md border border-gray-200">
-                <img src="public/1.svg" alt="logo" className="w-1/2" />
+            <Card className="w-[40%] h-[80%] min-w-[600px] gap-10 justify-center flex flex-row items-center z-10 shadow-2xl animate-in fade-in zoom-in duration-500 bg-white/70 backdrop-blur-md border border-gray-200">
+                <img src="public/1.svg" alt="logo" className="w-1/4" />
                 <div>
                     <CardHeader>
                         <CardTitle className="text-2xl text-center text-gray-900">
