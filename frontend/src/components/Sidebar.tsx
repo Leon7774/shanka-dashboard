@@ -16,7 +16,7 @@ export function Sidebar() {
     return (
         <div
             className={cn(
-                "h-screen bg-card border-r transition-all duration-300 flex flex-col",
+                "min-h-screen bg-card border-r transition-all duration-300 flex flex-col",
                 collapsed ? "w-16" : "w-64"
             )}
         >
