@@ -17,5 +17,8 @@
         "url": "https://github.com/Leon7774/shanka-dashboard/issues"
     },
     "homepage": "https://github.com/Leon7774/shanka-dashboard#readme",
-    "description": ""
+    "description": "",
+    "dependencies": {
+        "dotenv": "^17.2.3"
+    }
 }

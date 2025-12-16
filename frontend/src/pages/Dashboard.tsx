@@ -1,15 +1,11 @@
 import { useEffect, useState } from "react";
 import {
-    fetchDataset,
-    processData,
-    calculateForecast,
-    getProductPerformance,
+    loadDashboardData,
     KPI,
     CountrySales,
     ProductSales,
     ForecastData,
     ProductPerformance,
-    RetailRow,
 } from "@/lib/data";
 import {
     Card,
@@ -39,7 +35,6 @@ import {
 } from "lucide-react";
 
 export default function Dashboard() {
-    const [data, setData] = useState<RetailRow[]>([]);
     const [kpi, setKpi] = useState<KPI | null>(null);
     const [countrySales, setCountrySales] = useState<CountrySales[]>([]);
     const [productSales, setProductSales] = useState<ProductSales[]>([]);
@@ -52,19 +47,18 @@ export default function Dashboard() {
 
     useEffect(() => {
         async function load() {
-            const rawData = await fetchDataset();
-            console.log(rawData);
-            const { kpi, countrySales, productSales } = processData(rawData);
-            const forecast = calculateForecast(rawData);
-            const perf = getProductPerformance(rawData);
-
-            // setData(rawData);
-            setKpi(kpi);
-            setCountrySales(countrySales);
-            setProductSales(productSales);
-            setForecastData(forecast);
-            setPerformance(perf);
-            setLoading(false);
+            try {
+                const data = await loadDashboardData();
+                setKpi(data.kpi);
+                setCountrySales(data.countrySales);
+                setProductSales(data.productSales);
+                setForecastData(data.forecastData);
+                setPerformance(data.performance);
+            } catch (error) {
+                console.error("Failed to load dashboard data", error);
+            } finally {
+                setLoading(false);
+            }
         }
         load();
     }, []);
