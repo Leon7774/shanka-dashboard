@@ -16,55 +16,76 @@ if (!supabaseUrl || !supabaseKey) {
 const supabase = (0, supabase_js_1.createClient)(supabaseUrl, supabaseKey);
 
 const handler = async (event) => {
-    // Fetch all
-    const fetchAll = event.queryStringParameters?.fetchAll;
-    // Number of rows
-    const limit = Number(event.queryStringParameters?.limit) || 10;
-    // Page to retrieve
-    const offset = Number(event.queryStringParameters?.offset) || 0;
-    const sort = event.queryStringParameters?.sort || "asc";
-    // Supabase uses range(start, end)
-    // So we multiply offset by limit to get the start and end
-    const range = offset * limit;
+    // Enable CORS
+    const headers = {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Headers": "Content-Type",
+        "Access-Control-Allow-Methods": "OPTIONS,GET",
+    };
+
+    const view = event.queryStringParameters?.view;
 
     try {
-        // If fetchAll = true
-        if (fetchAll) {
-            const { data, error } = await supabase.from("sales").select("*");
+        console.log(`Fetch request for view: ${view}`);
+        let result = { data: null, error: null };
 
-            if (error) {
-                console.error("Supabase error:", error);
-                return {
-                    statusCode: 500,
-                    body: JSON.stringify({ error: error.message }),
-                };
-            }
-            return {
-                statusCode: 200,
-                body: JSON.stringify(data),
-            };
+        switch (view) {
+            case "kpi":
+                result = await supabase
+                    .from("view_kpi_summary")
+                    .select("*")
+                    .single();
+                break;
+            case "country":
+                result = await supabase
+                    .from("view_sales_by_country")
+                    .select("*")
+                    .order("total_revenue", { ascending: false })
+                    .limit(10);
+                break;
+            case "products":
+                result = await supabase
+                    .from("view_product_performance")
+                    .select("*")
+                    .order("total_revenue", { ascending: false });
+                break;
+            case "forecast":
+                result = await supabase
+                    .from("view_monthly_sales")
+                    .select("*")
+                    .order("month", { ascending: true });
+                break;
+            default:
+                // Fallback to original logic (simplified) or return error
+                // For backward compatibility or debug:
+                const limit = Number(event.queryStringParameters?.limit) || 10;
+                const offset = Number(event.queryStringParameters?.offset) || 0;
+                const range = offset * limit;
+                result = await supabase
+                    .from("sales")
+                    .select("*")
+                    .range(range, range + limit);
         }
 
-        // If selective fetch
-        const { data, error } = await supabase
-            .from("sales")
-            .select("*")
-            .range(range, range + limit);
-        if (error) {
-            console.error("Supabase error:", error);
+        if (result.error) {
+            console.error("Supabase error:", result.error);
             return {
                 statusCode: 500,
-                body: JSON.stringify({ error: error.message }),
+                headers,
+                body: JSON.stringify({ error: result.error.message }),
             };
         }
+
         return {
             statusCode: 200,
-            body: JSON.stringify(data),
+            headers,
+            body: JSON.stringify(result.data),
         };
     } catch (err) {
         console.error("Handler error:", err);
         return {
             statusCode: 500,
+            headers,
             body: JSON.stringify({ error: "Internal Server Error" }),
         };
     }
