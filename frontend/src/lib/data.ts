@@ -1,12 +1,10 @@
-import * as XLSX from "xlsx";
-
 export interface RetailRow {
     Id: number;
     InvoiceNo: string | number;
     StockCode: string | number;
     Description: string;
     Quantity: number;
-    InvoiceDate: number; // Excel date serial or string
+    InvoiceDate: number;
     UnitPrice: number;
     CustomerID: number;
     Country: string;
@@ -28,69 +26,6 @@ export interface ProductSales {
     sales: number;
 }
 
-export async function fetchDataset(): Promise<RetailRow[]> {
-    try {
-        const data = await fetch(
-            "https://4jzzibjtu1.execute-api.ap-southeast-2.amazonaws.com/shanka/fetch/sales?fetchAll=true"
-        );
-
-        // console.log(data.json());
-
-        return await data.json();
-    } catch (error) {
-        console.error("Error loading dataset:", error);
-        return [];
-    }
-}
-
-export function processData(data: RetailRow[]) {
-    let totalSales = 0;
-    const uniqueInvoices = new Set();
-    const uniqueCustomers = new Set();
-    const salesByCountry: Record<string, number> = {};
-    const salesByProduct: Record<string, number> = {};
-
-    data.forEach((row) => {
-        // Basic validation
-        if (!row.Quantity || !row.UnitPrice) return;
-
-        const saleAmount = row.Quantity * row.UnitPrice;
-        totalSales += saleAmount;
-        uniqueInvoices.add(row.InvoiceNo);
-        if (row.CustomerID) uniqueCustomers.add(row.CustomerID);
-
-        // Country Aggregation
-        if (row.Country) {
-            salesByCountry[row.Country] =
-                (salesByCountry[row.Country] || 0) + saleAmount;
-        }
-
-        // Product Aggregation
-        if (row.Description) {
-            salesByProduct[row.Description] =
-                (salesByProduct[row.Description] || 0) + saleAmount;
-        }
-    });
-
-    const countrySales: CountrySales[] = Object.entries(salesByCountry)
-        .map(([country, sales]) => ({ country, sales }))
-        .sort((a, b) => b.sales - a.sales)
-        .slice(0, 10); // Top 10
-
-    const productSales: ProductSales[] = Object.entries(salesByProduct)
-        .map(([product, sales]) => ({ product, sales }))
-        .sort((a, b) => b.sales - a.sales)
-        .slice(0, 10); // Top 10
-
-    const kpi: KPI = {
-        totalSales,
-        totalOrders: uniqueInvoices.size,
-        totalCustomers: uniqueCustomers.size,
-    };
-
-    return { kpi, countrySales, productSales };
-}
-
 export interface ForecastData {
     date: string;
     actualSales?: number;
@@ -104,51 +39,113 @@ export interface ProductPerformance {
     price: number;
 }
 
-export function calculateForecast(data: RetailRow[]): ForecastData[] {
-    // 1. Group by Month (using approximate indexing)
-    // Helper to convert Excel serial date to JS Date (approximate)
-    // Excel base date: Dec 30 1899.
-    // But often in JS passed as string or number. If number < 200000 it's likely serial.
+interface ViewMonthlySales {
+    month: string; // timestamp with time zone
+    monthly_revenue: number;
+    order_count: number;
+}
 
-    const buckets: { [key: number]: number } = {};
-    let minDate = Infinity;
-    let maxDate = -Infinity;
+const API_URL =
+    "https://4jzzibjtu1.execute-api.ap-southeast-2.amazonaws.com/shanka/fetch/sales";
 
-    data.forEach((row) => {
-        if (typeof row.InvoiceDate === "number") {
-            // Approximate month grouping: roughly 30 days
-            const monthIndex = Math.floor(row.InvoiceDate / 30);
-            buckets[monthIndex] =
-                (buckets[monthIndex] || 0) + row.Quantity * row.UnitPrice;
-            if (row.InvoiceDate < minDate) minDate = row.InvoiceDate;
-            if (row.InvoiceDate > maxDate) maxDate = row.InvoiceDate;
+async function fetchFromLambda(viewName: string) {
+    try {
+        const response = await fetch(`${API_URL}?view=${viewName}`);
+        if (!response.ok) {
+            console.error(
+                `Error fetching view ${viewName}:`,
+                response.statusText
+            );
+            return null;
         }
+        return await response.json();
+    } catch (error) {
+        console.error(`Error fetching view ${viewName}:`, error);
+        return null;
+    }
+}
+
+export async function fetchKPI(): Promise<KPI | null> {
+    const data = await fetchFromLambda("kpi");
+    if (!data) return null;
+
+    return {
+        totalSales: data.total_revenue,
+        totalOrders: data.total_orders,
+        totalCustomers: data.unique_customers,
+    };
+}
+
+export async function fetchCountrySales(): Promise<CountrySales[]> {
+    const data = await fetchFromLambda("country");
+    if (!data) return [];
+
+    return (data || []).map((row: any) => ({
+        country: row.Country,
+        sales: row.total_revenue,
+    }));
+}
+
+export async function fetchProductPerformance() {
+    // For top products
+    // Note: Lambda 'products' view is sorted by sales DESC, so this is Top Products
+    const topData = await fetchFromLambda("products");
+
+    // In Lambda v1 we only have one product view sort.
+    // To get underperformers efficiently we might need another view sort or just reverse client side if dataset small.
+    // The current lambda 'products' returns ALL products ordered by revenue desc.
+    // We can slice top 5 and bottom 5 here.
+    // Or update Lambda to accept sort param.
+    // Assuming 'products' returns enough data (e.g. top 50 or all).
+    // Reviewing lambda code: it selects * from view and orders DESC. No limit.
+    // So we invoke it once and slice.
+
+    const allProducts = topData || [];
+    const topPerformers = allProducts.slice(0, 5);
+    const underperformers = [...allProducts].reverse().slice(0, 5);
+
+    // Map existing view columns to ProductPerformance interface
+    const mapToPerformance = (row: any): ProductPerformance => ({
+        product: row.Description,
+        sales: row.total_revenue,
+        quantity: row.units_sold,
+        price: row.units_sold ? row.total_revenue / row.units_sold : 0,
     });
 
-    const xValues: number[] = [];
-    const yValues: number[] = [];
-    const monthlyData: { index: number; sales: number }[] = [];
+    return {
+        topPerformers: topPerformers.map(mapToPerformance),
+        underperformers: underperformers.map(mapToPerformance),
+        allProducts: [],
+    };
+}
 
-    Object.entries(buckets).forEach(([indexStr, sales]) => {
-        const index = parseInt(indexStr);
-        xValues.push(index);
-        yValues.push(sales);
-        monthlyData.push({ index, sales });
-    });
+export async function fetchSalesForecast(): Promise<ForecastData[]> {
+    const data = await fetchFromLambda("forecast");
+    if (!data) return [];
 
-    monthlyData.sort((a, b) => a.index - b.index);
+    const monthlyData: ViewMonthlySales[] = data || [];
 
-    // Linear Regression
-    const n = monthlyData.length;
+    // Transform timestamp to index for regression
+    const points = monthlyData.map((d, i) => ({
+        index: i,
+        sales: d.monthly_revenue,
+        originalDate: d.month,
+    }));
+
+    // Calculate Trend Line (Linear Regression)
+    const n = points.length;
     if (n === 0) return [];
 
-    const sumX = xValues.reduce((a, b) => a + b, 0);
-    const sumY = yValues.reduce((a, b) => a + b, 0);
-    const sumXY = monthlyData.reduce(
+    const sumX = points.reduce((a, b) => a + b.index, 0);
+    const sumY = points.reduce((a, b) => a + b.sales, 0);
+    const sumXY = points.reduce(
         (acc, curr) => acc + curr.index * curr.sales,
         0
     );
-    const sumXX = xValues.reduce((acc, curr) => acc + curr * curr, 0);
+    const sumXX = points.reduce(
+        (acc, curr) => acc + curr.index * curr.index,
+        0
+    );
 
     const slope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
     const intercept = (sumY - slope * sumX) / n;
@@ -157,16 +154,19 @@ export function calculateForecast(data: RetailRow[]): ForecastData[] {
     const result: ForecastData[] = [];
 
     // Historical
-    monthlyData.forEach((item) => {
+    points.forEach((item, i) => {
         result.push({
-            date: `Month ${result.length + 1}`,
+            date: new Date(item.originalDate).toLocaleDateString(undefined, {
+                month: "short",
+                year: "numeric",
+            }),
             actualSales: item.sales,
-            forecastSales: Math.max(0, slope * item.index + intercept), // Trend line on history
+            forecastSales: Math.max(0, slope * item.index + intercept),
         });
     });
 
     // Future Forecast (next 3 periods)
-    const lastIndex = monthlyData[monthlyData.length - 1].index;
+    const lastIndex = points[points.length - 1].index;
     for (let i = 1; i <= 3; i++) {
         const forecastVal = slope * (lastIndex + i) + intercept;
         result.push({
@@ -178,28 +178,26 @@ export function calculateForecast(data: RetailRow[]): ForecastData[] {
     return result;
 }
 
-export function getProductPerformance(data: RetailRow[]) {
-    const productStats: Record<string, ProductPerformance> = {};
+export async function loadDashboardData() {
+    // Run parallely
+    const [kpi, countrySales, performance, forecastData] = await Promise.all([
+        fetchKPI(),
+        fetchCountrySales(),
+        fetchProductPerformance(),
+        fetchSalesForecast(),
+    ]);
 
-    data.forEach((row) => {
-        if (!row.Description) return;
-        if (!productStats[row.Description]) {
-            productStats[row.Description] = {
-                product: row.Description,
-                sales: 0,
-                quantity: 0,
-                price: row.UnitPrice, // Assuming relatively constant or taking last
-            };
-        }
-        productStats[row.Description].sales += row.Quantity * row.UnitPrice;
-        productStats[row.Description].quantity += row.Quantity;
-    });
+    // Construct ProductSales array for the "Top Products" chart from performance top performers
+    const productSales: ProductSales[] = performance.topPerformers.map((p) => ({
+        product: p.product,
+        sales: p.sales,
+    }));
 
-    const products = Object.values(productStats);
-    products.sort((a, b) => b.sales - a.sales);
-
-    const underperformers = products.slice(-5); // Bottom 5
-    const topPerformers = products.slice(0, 5);
-
-    return { topPerformers, underperformers, allProducts: products };
+    return {
+        kpi,
+        countrySales,
+        productSales,
+        performance,
+        forecastData,
+    };
 }
