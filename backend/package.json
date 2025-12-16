@@ -1,20 +1,23 @@
 {
-  "name": "backend",
-  "version": "1.0.0",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": "",
-  "dependencies": {
-    "@supabase/supabase-js": "^2.87.3"
-  },
-  "devDependencies": {
-    "@types/node": "^25.0.2",
-    "ts-node": "^10.9.2",
-    "typescript": "^5.9.3"
-  }
+    "name": "backend",
+    "version": "1.0.0",
+    "main": "index.js",
+    "scripts": {
+        "build": "tsc",
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "description": "",
+    "dependencies": {
+        "@supabase/supabase-js": "^2.87.3",
+        "dotenv": "^17.2.3"
+    },
+    "devDependencies": {
+        "@types/aws-lambda": "^8.10.159",
+        "@types/node": "^25.0.2",
+        "ts-node": "^10.9.2",
+        "typescript": "^5.9.3"
+    }
 }
