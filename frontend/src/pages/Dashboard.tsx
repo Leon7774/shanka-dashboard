@@ -1,21 +1,59 @@
-import { useEffect, useState } from 'react';
-import { fetchDataset, processData, calculateForecast, getProductPerformance, KPI, CountrySales, ProductSales, ForecastData, ProductPerformance } from '@/lib/data';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line, Legend } from 'recharts';
-import { Loader2, DollarSign, ShoppingCart, Users, TrendingUp, AlertTriangle } from 'lucide-react';
+import { useEffect, useState } from "react";
+import {
+    fetchDataset,
+    processData,
+    calculateForecast,
+    getProductPerformance,
+    KPI,
+    CountrySales,
+    ProductSales,
+    ForecastData,
+    ProductPerformance,
+    RetailRow,
+} from "@/lib/data";
+import {
+    Card,
+    CardContent,
+    CardHeader,
+    CardTitle,
+    CardDescription,
+} from "@/components/ui/card";
+import {
+    BarChart,
+    Bar,
+    XAxis,
+    YAxis,
+    Tooltip,
+    ResponsiveContainer,
+    LineChart,
+    Line,
+    Legend,
+} from "recharts";
+import {
+    Loader2,
+    DollarSign,
+    ShoppingCart,
+    Users,
+    TrendingUp,
+    AlertTriangle,
+} from "lucide-react";
 
 export default function Dashboard() {
-    //    const [data, setData] = useState<RetailRow[]>([]);
+    const [data, setData] = useState<RetailRow[]>([]);
     const [kpi, setKpi] = useState<KPI | null>(null);
     const [countrySales, setCountrySales] = useState<CountrySales[]>([]);
     const [productSales, setProductSales] = useState<ProductSales[]>([]);
     const [forecastData, setForecastData] = useState<ForecastData[]>([]);
-    const [performance, setPerformance] = useState<{ topPerformers: ProductPerformance[], underperformers: ProductPerformance[] } | null>(null);
+    const [performance, setPerformance] = useState<{
+        topPerformers: ProductPerformance[];
+        underperformers: ProductPerformance[];
+    } | null>(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         async function load() {
             const rawData = await fetchDataset();
+            console.log(rawData);
             const { kpi, countrySales, productSales } = processData(rawData);
             const forecast = calculateForecast(rawData);
             const perf = getProductPerformance(rawData);
@@ -36,18 +74,24 @@ export default function Dashboard() {
             <div className="min-h-screen flex items-center justify-center bg-background">
                 <div className="flex flex-col items-center gap-4">
                     <Loader2 className="h-12 w-12 animate-spin text-primary" />
-                    <p className="text-muted-foreground animate-pulse">Loading Dataset...</p>
+                    <p className="text-muted-foreground animate-pulse">
+                        Loading Dataset...
+                    </p>
                 </div>
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen bg-background p-8 space-y-8">
+        <div className="bg-background p-8 space-y-8">
             <div className="flex justify-between items-center">
                 <div>
-                    <h1 className="text-4xl font-bold tracking-tight text-foreground">Overview</h1>
-                    <p className="text-muted-foreground">Retail Performance Dashboard</p>
+                    <h1 className="text-4xl font-bold tracking-tight text-foreground">
+                        Overview
+                    </h1>
+                    <p className="text-muted-foreground">
+                        Retail Performance Dashboard
+                    </p>
                 </div>
                 <div className="text-sm text-muted-foreground">
                     Last updated: {new Date().toLocaleDateString()}
@@ -58,40 +102,56 @@ export default function Dashboard() {
             <div className="grid gap-4 md:grid-cols-3">
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
+                        <CardTitle className="text-sm font-medium">
+                            Total Revenue
+                        </CardTitle>
                         <DollarSign className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold">
-                            {kpi?.totalSales ? `$${kpi.totalSales.toLocaleString(undefined, { maximumFractionDigits: 0 })}` : '$0'}
+                            {kpi?.totalSales
+                                ? `$${kpi.totalSales.toLocaleString(undefined, {
+                                      maximumFractionDigits: 0,
+                                  })}`
+                                : "$0"}
                         </div>
-                        <p className="text-xs text-muted-foreground">+20.1% from last month</p>
+                        <p className="text-xs text-muted-foreground">
+                            +20.1% from last month
+                        </p>
                     </CardContent>
                 </Card>
 
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
+                        <CardTitle className="text-sm font-medium">
+                            Total Orders
+                        </CardTitle>
                         <ShoppingCart className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold">
                             {kpi?.totalOrders.toLocaleString()}
                         </div>
-                        <p className="text-xs text-muted-foreground">+12% from last month</p>
+                        <p className="text-xs text-muted-foreground">
+                            +12% from last month
+                        </p>
                     </CardContent>
                 </Card>
 
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Unique Customers</CardTitle>
+                        <CardTitle className="text-sm font-medium">
+                            Unique Customers
+                        </CardTitle>
                         <Users className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold">
                             {kpi?.totalCustomers.toLocaleString()}
                         </div>
-                        <p className="text-xs text-muted-foreground">+7% from last month</p>
+                        <p className="text-xs text-muted-foreground">
+                            +7% from last month
+                        </p>
                     </CardContent>
                 </Card>
             </div>
@@ -102,25 +162,47 @@ export default function Dashboard() {
                     <CardHeader>
                         <CardTitle>Sales Forecasting & Trends</CardTitle>
                         <CardDescription>
-                            Historical sales analysis with 3-month predictive linear forecast
+                            Historical sales analysis with 3-month predictive
+                            linear forecast
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
                         <div className="h-[300px]">
                             <ResponsiveContainer width="100%" height="100%">
                                 <LineChart data={forecastData}>
-                                    <CartesianGrid strokeDasharray="3 3" opacity={0.3} vertical={false} />
-                                    <XAxis dataKey="date" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
+                                    <CartesianGrid
+                                        strokeDasharray="3 3"
+                                        opacity={0.3}
+                                        vertical={false}
+                                    />
+                                    <XAxis
+                                        dataKey="date"
+                                        stroke="#888888"
+                                        fontSize={12}
+                                        tickLine={false}
+                                        axisLine={false}
+                                    />
                                     <YAxis
                                         stroke="#888888"
                                         fontSize={12}
                                         tickLine={false}
                                         axisLine={false}
-                                        tickFormatter={(value) => `$${value / 1000}k`}
+                                        tickFormatter={(value) =>
+                                            `$${value / 1000}k`
+                                        }
                                     />
                                     <Tooltip
-                                        contentStyle={{ backgroundColor: 'var(--background)', borderColor: 'var(--border)' }}
-                                        formatter={(value: number) => [`$${Math.round(value).toLocaleString()}`, 'Sales']}
+                                        contentStyle={{
+                                            backgroundColor:
+                                                "var(--background)",
+                                            borderColor: "var(--border)",
+                                        }}
+                                        formatter={(value: number) => [
+                                            `$${Math.round(
+                                                value
+                                            ).toLocaleString()}`,
+                                            "Sales",
+                                        ]}
                                     />
                                     <Legend />
                                     <Line
@@ -177,12 +259,24 @@ export default function Dashboard() {
                                     tickFormatter={(value) => `$${value}`}
                                 />
                                 <Tooltip
-                                    contentStyle={{ backgroundColor: 'var(--background)', borderColor: 'var(--border)', borderRadius: '8px' }}
-                                    labelStyle={{ color: 'var(--foreground)' }}
-                                    itemStyle={{ color: 'var(--primary)' }}
-                                    formatter={(value: number) => [`$${value.toLocaleString()}`, 'Sales']}
+                                    contentStyle={{
+                                        backgroundColor: "var(--background)",
+                                        borderColor: "var(--border)",
+                                        borderRadius: "8px",
+                                    }}
+                                    labelStyle={{ color: "var(--foreground)" }}
+                                    itemStyle={{ color: "var(--primary)" }}
+                                    formatter={(value: number) => [
+                                        `$${value.toLocaleString()}`,
+                                        "Sales",
+                                    ]}
                                 />
-                                <Bar dataKey="sales" fill="currentColor" radius={[4, 4, 0, 0]} className="fill-primary" />
+                                <Bar
+                                    dataKey="sales"
+                                    fill="currentColor"
+                                    radius={[4, 4, 0, 0]}
+                                    className="fill-primary"
+                                />
                             </BarChart>
                         </ResponsiveContainer>
                     </CardContent>
@@ -193,18 +287,31 @@ export default function Dashboard() {
                         <div className="flex-1">
                             <CardHeader>
                                 <CardTitle>Top Products</CardTitle>
-                                <CardDescription>Best revenue drivers</CardDescription>
+                                <CardDescription>
+                                    Best revenue drivers
+                                </CardDescription>
                             </CardHeader>
                             <CardContent>
                                 <div className="space-y-4">
                                     {productSales.slice(0, 4).map((item, i) => (
-                                        <div className="flex items-center" key={i}>
+                                        <div
+                                            className="flex items-center"
+                                            key={i}
+                                        >
                                             <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
                                                 {i + 1}
                                             </div>
                                             <div className="ml-4 space-y-1">
-                                                <p className="text-sm font-medium leading-none line-clamp-1" title={item.product}>{item.product}</p>
-                                                <p className="text-sm text-muted-foreground">${item.sales.toLocaleString()}</p>
+                                                <p
+                                                    className="text-sm font-medium leading-none line-clamp-1"
+                                                    title={item.product}
+                                                >
+                                                    {item.product}
+                                                </p>
+                                                <p className="text-sm text-muted-foreground">
+                                                    $
+                                                    {item.sales.toLocaleString()}
+                                                </p>
                                             </div>
                                             <div className="ml-auto font-medium">
                                                 <TrendingUp className="h-4 w-4 text-green-500 inline mr-1" />
@@ -221,21 +328,37 @@ export default function Dashboard() {
                                     <AlertTriangle className="h-4 w-4" />
                                     Underperformers
                                 </CardTitle>
-                                <CardDescription>Action needed: Low sales volume</CardDescription>
+                                <CardDescription>
+                                    Action needed: Low sales volume
+                                </CardDescription>
                             </CardHeader>
                             <CardContent>
                                 <div className="space-y-4">
-                                    {performance?.underperformers.slice(0, 3).map((item, i) => (
-                                        <div className="flex items-center" key={i}>
-                                            <div className="h-8 w-8 rounded-full bg-destructive/10 flex items-center justify-center text-destructive font-bold text-xs">
-                                                !
+                                    {performance?.underperformers
+                                        .slice(0, 3)
+                                        .map((item, i) => (
+                                            <div
+                                                className="flex items-center"
+                                                key={i}
+                                            >
+                                                <div className="h-8 w-8 rounded-full bg-destructive/10 flex items-center justify-center text-destructive font-bold text-xs">
+                                                    !
+                                                </div>
+                                                <div className="ml-4 space-y-1">
+                                                    <p
+                                                        className="text-sm font-medium leading-none line-clamp-1"
+                                                        title={item.product}
+                                                    >
+                                                        {item.product}
+                                                    </p>
+                                                    <p className="text-sm text-muted-foreground">
+                                                        $
+                                                        {item.sales.toLocaleString()}{" "}
+                                                        | {item.quantity} sold
+                                                    </p>
+                                                </div>
                                             </div>
-                                            <div className="ml-4 space-y-1">
-                                                <p className="text-sm font-medium leading-none line-clamp-1" title={item.product}>{item.product}</p>
-                                                <p className="text-sm text-muted-foreground">${item.sales.toLocaleString()} | {item.quantity} sold</p>
-                                            </div>
-                                        </div>
-                                    ))}
+                                        ))}
                                 </div>
                             </CardContent>
                         </div>
@@ -247,5 +370,4 @@ export default function Dashboard() {
 }
 
 // Helper component for CartesianGrid since it was missing in import above but used in code
-import { CartesianGrid } from 'recharts';
-
+import { CartesianGrid } from "recharts";
