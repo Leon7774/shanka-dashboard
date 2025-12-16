@@ -1,7 +1,6 @@
-import * as XLSX from "xlsx";
+import * as XLSX from 'xlsx';
 
 export interface RetailRow {
-    Id: number;
     InvoiceNo: string | number;
     StockCode: string | number;
     Description: string;
@@ -30,13 +29,18 @@ export interface ProductSales {
 
 export async function fetchDataset(): Promise<RetailRow[]> {
     try {
-        const data = await fetch(
-            "https://4jzzibjtu1.execute-api.ap-southeast-2.amazonaws.com/shanka/fetch/sales?fetchAll=true"
-        );
+        const response = await fetch('/dataset/Online%20Retail.xlsx');
+        if (!response.ok) {
+            throw new Error(`Failed to fetch dataset: ${response.statusText}`);
+        }
+        const arrayBuffer = await response.arrayBuffer();
+        const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+        const sheetName = workbook.SheetNames[0];
+        const sheet = workbook.Sheets[sheetName];
 
-        // console.log(data.json());
-
-        return await data.json();
+        // Parse to JSON
+        const data: RetailRow[] = XLSX.utils.sheet_to_json(sheet);
+        return data;
     } catch (error) {
         console.error("Error loading dataset:", error);
         return [];
@@ -61,14 +65,12 @@ export function processData(data: RetailRow[]) {
 
         // Country Aggregation
         if (row.Country) {
-            salesByCountry[row.Country] =
-                (salesByCountry[row.Country] || 0) + saleAmount;
+            salesByCountry[row.Country] = (salesByCountry[row.Country] || 0) + saleAmount;
         }
 
         // Product Aggregation
         if (row.Description) {
-            salesByProduct[row.Description] =
-                (salesByProduct[row.Description] || 0) + saleAmount;
+            salesByProduct[row.Description] = (salesByProduct[row.Description] || 0) + saleAmount;
         }
     });
 
@@ -107,19 +109,18 @@ export interface ProductPerformance {
 export function calculateForecast(data: RetailRow[]): ForecastData[] {
     // 1. Group by Month (using approximate indexing)
     // Helper to convert Excel serial date to JS Date (approximate)
-    // Excel base date: Dec 30 1899.
+    // Excel base date: Dec 30 1899. 
     // But often in JS passed as string or number. If number < 200000 it's likely serial.
 
     const buckets: { [key: number]: number } = {};
     let minDate = Infinity;
     let maxDate = -Infinity;
 
-    data.forEach((row) => {
-        if (typeof row.InvoiceDate === "number") {
+    data.forEach(row => {
+        if (typeof row.InvoiceDate === 'number') {
             // Approximate month grouping: roughly 30 days
             const monthIndex = Math.floor(row.InvoiceDate / 30);
-            buckets[monthIndex] =
-                (buckets[monthIndex] || 0) + row.Quantity * row.UnitPrice;
+            buckets[monthIndex] = (buckets[monthIndex] || 0) + (row.Quantity * row.UnitPrice);
             if (row.InvoiceDate < minDate) minDate = row.InvoiceDate;
             if (row.InvoiceDate > maxDate) maxDate = row.InvoiceDate;
         }
@@ -144,11 +145,8 @@ export function calculateForecast(data: RetailRow[]): ForecastData[] {
 
     const sumX = xValues.reduce((a, b) => a + b, 0);
     const sumY = yValues.reduce((a, b) => a + b, 0);
-    const sumXY = monthlyData.reduce(
-        (acc, curr) => acc + curr.index * curr.sales,
-        0
-    );
-    const sumXX = xValues.reduce((acc, curr) => acc + curr * curr, 0);
+    const sumXY = monthlyData.reduce((acc, curr) => acc + (curr.index * curr.sales), 0);
+    const sumXX = xValues.reduce((acc, curr) => acc + (curr * curr), 0);
 
     const slope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
     const intercept = (sumY - slope * sumX) / n;
@@ -157,11 +155,11 @@ export function calculateForecast(data: RetailRow[]): ForecastData[] {
     const result: ForecastData[] = [];
 
     // Historical
-    monthlyData.forEach((item) => {
+    monthlyData.forEach(item => {
         result.push({
             date: `Month ${result.length + 1}`,
             actualSales: item.sales,
-            forecastSales: Math.max(0, slope * item.index + intercept), // Trend line on history
+            forecastSales: Math.max(0, slope * item.index + intercept) // Trend line on history
         });
     });
 
@@ -171,7 +169,7 @@ export function calculateForecast(data: RetailRow[]): ForecastData[] {
         const forecastVal = slope * (lastIndex + i) + intercept;
         result.push({
             date: `Forecast ${i}`,
-            forecastSales: Math.max(0, forecastVal),
+            forecastSales: Math.max(0, forecastVal)
         });
     }
 
@@ -181,14 +179,14 @@ export function calculateForecast(data: RetailRow[]): ForecastData[] {
 export function getProductPerformance(data: RetailRow[]) {
     const productStats: Record<string, ProductPerformance> = {};
 
-    data.forEach((row) => {
+    data.forEach(row => {
         if (!row.Description) return;
         if (!productStats[row.Description]) {
             productStats[row.Description] = {
                 product: row.Description,
                 sales: 0,
                 quantity: 0,
-                price: row.UnitPrice, // Assuming relatively constant or taking last
+                price: row.UnitPrice // Assuming relatively constant or taking last
             };
         }
         productStats[row.Description].sales += row.Quantity * row.UnitPrice;
