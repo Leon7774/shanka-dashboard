@@ -16,6 +16,8 @@ if (!supabaseUrl || !supabaseKey) {
 const supabase = (0, supabase_js_1.createClient)(supabaseUrl, supabaseKey);
 
 const handler = async (event) => {
+    // Fetch all
+    const fetchAll = event.queryStringParameters?.fetchAll;
     // Number of rows
     const limit = Number(event.queryStringParameters?.limit) || 10;
     // Page to retrieve
@@ -24,7 +26,26 @@ const handler = async (event) => {
     // Supabase uses range(start, end)
     // So we multiply offset by limit to get the start and end
     const range = offset * limit;
+
     try {
+        // If fetchAll = true
+        if (fetchAll) {
+            const { data, error } = await supabase.from("sales").select("*");
+
+            if (error) {
+                console.error("Supabase error:", error);
+                return {
+                    statusCode: 500,
+                    body: JSON.stringify({ error: error.message }),
+                };
+            }
+            return {
+                statusCode: 200,
+                body: JSON.stringify(data),
+            };
+        }
+
+        // If selective fetch
         const { data, error } = await supabase
             .from("sales")
             .select("*")
