@@ -5,6 +5,7 @@ import {
     PlusCircle,
     ChevronLeft,
     ChevronRight,
+    LogOut,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -30,13 +31,11 @@ export function Sidebar() {
                                 className="h-full object-cover object-center"
                             />
                         </div>
-                        <div className="h-14 w-28 flex flex-col items-center pt-2   ">
-                            <img
-                                src="/3.svg"
-                                alt="Brand Name"
-                                className="w-full object-cover object-center"
-                            />
-                            <p className="text-xs text-gray-500">
+                        <div className="h-14 flex flex-col justify-center px-2">
+                            <h1 className="text-xl font-bold tracking-wider text-foreground">
+                                SHANKA
+                            </h1>
+                            <p className="text-[10px] text-muted-foreground -mt-1 hidden md:block">
                                 Admin Dashboard
                             </p>
                         </div>
@@ -94,6 +93,23 @@ export function Sidebar() {
                         {!collapsed && <span className="ml-2">Add Sale</span>}
                     </Button>
                 </Link>
+
+                <div className="mt-auto pt-4 border-t">
+                    <Link to="/">
+                        <Button
+                            variant="ghost"
+                            className={cn(
+                                "w-full flex text-destructive hover:text-destructive hover:bg-destructive/10",
+                                collapsed
+                                    ? "px-2 justify-center items-center"
+                                    : "px-4 justify-start items-center"
+                            )}
+                        >
+                            <LogOut className="h-5 w-5" />
+                            {!collapsed && <span className="ml-2">Logout</span>}
+                        </Button>
+                    </Link>
+                </div>
             </nav>
 
             <div className="p-4 border-t">
