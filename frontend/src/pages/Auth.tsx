@@ -89,7 +89,7 @@ export default function Auth() {
                         </form>
                     </CardContent>
                     <CardFooter className="flex justify-center text-xs text-gray-400">
-                        <span>Protected by MockAuth™ Enterprise Security</span>
+                        <span>By Destura™</span>
                     </CardFooter>
                 </div>
             </Card>
