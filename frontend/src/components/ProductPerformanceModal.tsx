@@ -38,12 +38,16 @@ interface ProductPerformanceModalProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     initialView?: "top" | "worst";
+    countryFilter?: string;
+    dateRange?: { start?: string; end?: string };
 }
 
 export function ProductPerformanceModal({
     open,
     onOpenChange,
     initialView = "top",
+    countryFilter = "All",
+    dateRange,
 }: ProductPerformanceModalProps) {
     const [view, setView] = useState<"top" | "worst">(initialView);
     const [page, setPage] = useState(1);
@@ -78,6 +82,13 @@ export function ProductPerformanceModal({
                         p_search: search,
                         p_sort_desc: view === "top",
                         p_exclude_negative: excludeNegative,
+                        p_country: countryFilter,
+                        p_start_date: dateRange?.start
+                            ? new Date(dateRange.start).toISOString()
+                            : null,
+                        p_end_date: dateRange?.end
+                            ? new Date(dateRange.end).toISOString()
+                            : null,
                     }
                 );
 
@@ -104,7 +115,7 @@ export function ProductPerformanceModal({
         }, 300);
 
         return () => clearTimeout(timeoutId);
-    }, [open, page, search, view, excludeNegative]);
+    }, [open, page, search, view, excludeNegative, countryFilter, dateRange]);
 
     const totalPages = Math.ceil(totalCount / pageSize);
 
