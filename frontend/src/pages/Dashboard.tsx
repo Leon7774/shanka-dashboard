@@ -4,7 +4,6 @@ import {
     loadDashboardData,
     KPI,
     CountrySales,
-    ProductSales,
     ForecastData,
     ProductPerformance,
 } from "@/lib/data";
@@ -57,7 +56,6 @@ export default function Dashboard() {
     const [kpi, setKpi] = useState<KPI | null>(null);
     const [excludeUK, setExcludeUK] = useState(false);
     const [countrySales, setCountrySales] = useState<CountrySales[]>([]);
-    const [productSales, setProductSales] = useState<ProductSales[]>([]);
     const [forecastData, setForecastData] = useState<ForecastData[]>([]);
     const [performance, setPerformance] = useState<{
         topPerformers: ProductPerformance[];
@@ -117,7 +115,7 @@ export default function Dashboard() {
         if (data) {
             setKpi(data.kpi);
             setCountrySales(data.countrySales);
-            setProductSales(data.productSales);
+            // setProductSales(data.productSales); // Removed state
             setForecastData(data.forecastData);
             setPerformance(data.performance);
             console.log("Regional Data received:", data.regionalData);

@@ -55,10 +55,9 @@ export function DomesticVsInternational({ data }: Props) {
                                 label={({
                                     cx,
                                     cy,
-                                    midAngle,
-                                    innerRadius,
+                                    midAngle = 0,
                                     outerRadius,
-                                    percent,
+                                    percent = 0,
                                 }) => {
                                     const RADIAN = Math.PI / 180;
                                     const radius = outerRadius + 20;
