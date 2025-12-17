@@ -94,7 +94,7 @@ export function Sidebar() {
                     </Button>
                 </Link>
 
-                <div className="mt-auto pt-4 border-t">
+                <div className="mt-auto items-center justify-center pt-2 border-t">
                     <Link to="/">
                         <Button
                             variant="ghost"
