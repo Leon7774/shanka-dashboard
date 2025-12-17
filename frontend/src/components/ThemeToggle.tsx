@@ -17,9 +17,9 @@ export function ThemeToggle() {
                 "dark",
                 savedTheme === "dark"
             );
-        } else if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
-            setTheme("dark");
-            document.documentElement.classList.toggle("dark", true);
+        } else {
+            setTheme("light");
+            document.documentElement.classList.remove("dark");
         }
     }, []);
 
