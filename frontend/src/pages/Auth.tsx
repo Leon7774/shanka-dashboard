@@ -30,14 +30,24 @@ export default function Auth() {
 
             {/* Updated card for Light Background: Dark text, subtle border/shadow */}
 
-            <Card className="w-[40%] h-[80%] min-w-[600px] gap-10 justify-center flex flex-row items-center z-10 shadow-2xl animate-in fade-in zoom-in duration-500 bg-white/70 backdrop-blur-md border border-gray-200">
-                <img src="public/1.svg" alt="logo" className="w-1/4" />
+            <Card className="w-[40%] h-[80%] min-w-[600px] gap-10 justify-center flex flex-row items-center z-10 shadow-2xl animate-in fade-in zoom-in duration-500 bg-white/70 backdrop-blur-md border border-gray-200 dark:bg-slate-900/70 dark:border-slate-800">
+                <div className="flex flex-col items-center">
+                    <img className="w-[200px]" src="2.svg" alt="logo" />
+                    <div className="flex flex-col items-center">
+                        <h1 className="text-5xl font-bold tracking-tight text-gray-900 dark:text-white">
+                            Shanka
+                        </h1>
+                        <p className="text-gray-500 dark:text-gray-400 text-sm">
+                            We love milking your wallet
+                        </p>
+                    </div>
+                </div>
                 <div>
                     <CardHeader>
-                        <CardTitle className="text-2xl text-center text-gray-900">
+                        <CardTitle className="text-2xl text-center text-gray-900 dark:text-white">
                             Welcome Back
                         </CardTitle>
-                        <CardDescription className="text-center text-gray-500">
+                        <CardDescription className="text-center text-gray-500 dark:text-gray-400">
                             Enter your credentials to access the dashboard
                         </CardDescription>
                     </CardHeader>
@@ -46,7 +56,7 @@ export default function Auth() {
                             <div className="space-y-2">
                                 <Label
                                     htmlFor="username"
-                                    className="text-gray-700"
+                                    className="text-gray-700 dark:text-gray-200"
                                 >
                                     Username
                                 </Label>
@@ -58,13 +68,13 @@ export default function Auth() {
                                         setUsername(e.target.value)
                                     }
                                     required
-                                    className="bg-white/50 border-gray-300 text-gray-900 placeholder:text-gray-400 focus-visible:ring-blue-500"
+                                    className="bg-white/50 border-gray-300 text-gray-900 placeholder:text-gray-400 focus-visible:ring-blue-500 dark:bg-slate-950/50 dark:border-slate-700 dark:text-white dark:placeholder:text-gray-500"
                                 />
                             </div>
                             <div className="space-y-2">
                                 <Label
                                     htmlFor="password"
-                                    className="text-gray-700"
+                                    className="text-gray-700 dark:text-gray-200"
                                 >
                                     Password
                                 </Label>
@@ -77,12 +87,12 @@ export default function Auth() {
                                         setPassword(e.target.value)
                                     }
                                     required
-                                    className="bg-white/50 border-gray-300 text-gray-900 placeholder:text-gray-400 focus-visible:ring-blue-500"
+                                    className="bg-white/50 border-gray-300 text-gray-900 placeholder:text-gray-400 focus-visible:ring-blue-500 dark:bg-slate-950/50 dark:border-slate-700 dark:text-white dark:placeholder:text-gray-500"
                                 />
                             </div>
                             <Button
                                 type="submit"
-                                className="w-full bg-[#1a73e8] hover:bg-[#1557b0] text-white shadow-md"
+                                className="w-full bg-[#1a73e8] hover:bg-[#1557b0] text-white shadow-md dark:bg-blue-600 dark:hover:bg-blue-700"
                             >
                                 Sign In
                             </Button>
