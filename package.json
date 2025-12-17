@@ -19,6 +19,7 @@
     "homepage": "https://github.com/Leon7774/shanka-dashboard#readme",
     "description": "",
     "dependencies": {
+        "@tanstack/react-query": "^5.90.12",
         "dotenv": "^17.2.3"
     }
 }
