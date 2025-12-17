@@ -211,16 +211,35 @@ export async function loadDashboardData(filters: DashboardFilters = {}) {
             sales: p.sales,
         }));
 
+        // 5. Regional Data Strategy
+        // Try to get direct data, otherwise calculate from available metrics (Fallback)
+        let regionalData = data.regionalData;
+
+        if (
+            !regionalData ||
+            (regionalData.domestic === 0 && regionalData.international === 0)
+        ) {
+            console.warn(
+                "Regional data missing from RPC, calculating from KPI fallback..."
+            );
+            const ukSales =
+                countrySales.find((c) => c.country === "United Kingdom")
+                    ?.sales || 0;
+            const totalSales = kpi.totalSales;
+
+            regionalData = {
+                domestic: ukSales,
+                international: Math.max(0, totalSales - ukSales),
+            };
+        }
+
         return {
             kpi,
             countrySales,
             productSales,
             performance: { topPerformers, underperformers },
             forecastData,
-            regionalData: data.regionalData || {
-                domestic: 0,
-                international: 0,
-            },
+            regionalData,
         };
     } catch (error) {
         console.error("Load Data Error:", error);
