@@ -468,13 +468,13 @@ export default function Dashboard() {
                         <div className="flex-1 border-t pt-4">
                             <CardHeader>
                                 <div className="flex items-center justify-between">
-                                    <CardTitle className="text-destructive flex items-center gap-2">
+                                    <CardTitle className="text-destructive flex items-center gap-2 dark:text-red-600">
                                         <AlertTriangle className="h-4 w-4" />
                                         Underperformers
                                     </CardTitle>
                                     <Button
                                         variant="link"
-                                        className="h-auto p-0 text-destructive"
+                                        className="h-auto p-0 text-destructive dark:text-red-600"
                                         onClick={() => {
                                             setStatsModalView("worst");
                                             setStatsModalOpen(true);
@@ -496,7 +496,7 @@ export default function Dashboard() {
                                                 className="flex items-center"
                                                 key={i}
                                             >
-                                                <div className="h-8 w-8 rounded-full bg-destructive/10 flex items-center justify-center text-destructive font-bold text-xs">
+                                                <div className="h-8 w-8 rounded-full bg-destructive/10 dark:bg-red-700/30 flex items-center justify-center text-destructive dark:text-red-400 font-bold text-xs">
                                                     !
                                                 </div>
                                                 <div className="ml-4 space-y-1">
