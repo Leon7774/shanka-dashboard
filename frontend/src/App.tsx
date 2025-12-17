@@ -3,6 +3,7 @@ import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import AddSale from "./pages/AddSale";
 import Layout from "./components/Layout";
+import DataTable from "./pages/DataTable";
 import { ThemeToggle } from "./components/ThemeToggle";
 
 function App() {
@@ -13,6 +14,7 @@ function App() {
                 <Route element={<Layout />}>
                     <Route path="/dashboard" element={<Dashboard />} />
                     <Route path="/add-sale" element={<AddSale />} />
+                    <Route path="/data-table" element={<DataTable />} />
                 </Route>
             </Routes>
             <ThemeToggle />
