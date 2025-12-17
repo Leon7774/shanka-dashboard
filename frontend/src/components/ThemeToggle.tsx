@@ -35,7 +35,7 @@ export function ThemeToggle() {
             variant="outline"
             size="icon"
             onClick={toggleTheme}
-            className="fixed bottom-4 left-4 h-10 w-10 rounded-full shadow-lg bg-background border-border hover:bg-accent z-50 transition-transform hover:scale-110"
+            className="fixed bottom-4 right-4 h-10 w-10 rounded-full shadow-lg bg-background border-border hover:bg-accent z-50 transition-transform hover:scale-110"
             title={`Switch to ${theme === "light" ? "dark" : "light"} mode`}
         >
             {theme === "light" ? (
