@@ -50,6 +50,7 @@ import { LatestSales } from "@/components/LatestSales";
 import { ProductPerformanceModal } from "@/components/ProductPerformanceModal";
 import { TopProductsByCountry } from "@/components/TopProductsByCountry";
 import { DomesticVsInternational } from "@/components/DomesticVsInternational";
+import { AverageOrderValueChart } from "@/components/AverageOrderValueChart";
 import { supabase } from "@/lib/supabase";
 
 export default function Dashboard() {
@@ -594,22 +595,21 @@ export default function Dashboard() {
                         </div>
                     </div>
                 </Card>
-
-                <div className="w-[400px]">
+                <Card className="col-span-2">
                     <DomesticVsInternational data={data?.regionalData} />
-                </div>
+                </Card>
+                <Card className="col-span-2">
+                    <AverageOrderValueChart data={countrySales} />
+                </Card>
             </div>
 
-            <div className="flex flex-col ">
-                <ProductPerformanceModal
-                    open={statsModalOpen}
-                    onOpenChange={setStatsModalOpen}
-                    initialView={statsModalView}
-                    countryFilter={selectedCountry}
-                    dateRange={dateRange}
-                />
-                {/* New Domestic vs International Chart */}
-            </div>
+            <ProductPerformanceModal
+                open={statsModalOpen}
+                onOpenChange={setStatsModalOpen}
+                initialView={statsModalView}
+                countryFilter={selectedCountry}
+                dateRange={dateRange}
+            />
         </div>
     );
 }

@@ -21,6 +21,8 @@ export interface KPI {
 export interface CountrySales {
     country: string;
     sales: number;
+    aov?: number;
+    order_count?: number;
 }
 
 export interface ProductSales {
@@ -127,6 +129,8 @@ export async function loadDashboardData(filters: DashboardFilters = {}) {
             (row: any) => ({
                 country: row.country,
                 sales: row.sales,
+                aov: row.aov || 0,
+                order_count: row.order_count || 0,
             })
         );
 
