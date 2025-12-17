@@ -14,6 +14,7 @@ import {
     CardTitle,
     CardDescription,
 } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
     BarChart,
     Bar,
@@ -29,7 +30,6 @@ import {
 
 console.log("Dashboard component loading...");
 import {
-    Loader2,
     DollarSign,
     ShoppingCart,
     Users,
@@ -125,12 +125,97 @@ export default function Dashboard() {
 
     if (loading) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-background">
-                <div className="flex flex-col items-center gap-4">
-                    <Loader2 className="h-12 w-12 animate-spin text-primary" />
-                    <p className="text-muted-foreground animate-pulse">
-                        Loading Dataset...
-                    </p>
+            <div className="bg-background p-8 space-y-8">
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                    <div className="space-y-2">
+                        <Skeleton className="h-10 w-[200px]" />
+                        <Skeleton className="h-4 w-[300px]" />
+                    </div>
+                    <Skeleton className="h-12 w-[600px] rounded-lg" />
+                </div>
+
+                {/* KPI Skeleton */}
+                <div className="grid gap-4 md:grid-cols-4">
+                    {[...Array(4)].map((_, i) => (
+                        <Card key={i}>
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <Skeleton className="h-4 w-[100px]" />
+                                <Skeleton className="h-4 w-4 rounded-full" />
+                            </CardHeader>
+                            <CardContent>
+                                <Skeleton className="h-8 w-[120px] mb-2" />
+                                <Skeleton className="h-3 w-[80px]" />
+                            </CardContent>
+                        </Card>
+                    ))}
+                </div>
+
+                {/* Forecast & Latest Sales Skeleton */}
+                <div className="grid gap-4 md:grid-cols-7">
+                    <Card className="col-span-4">
+                        <CardHeader>
+                            <Skeleton className="h-6 w-[200px] mb-2" />
+                            <Skeleton className="h-4 w-[300px]" />
+                        </CardHeader>
+                        <CardContent>
+                            <Skeleton className="h-[300px] w-full" />
+                        </CardContent>
+                    </Card>
+                    <Card className="col-span-3">
+                        <CardHeader>
+                            <Skeleton className="h-6 w-[150px] mb-2" />
+                            <Skeleton className="h-4 w-[250px]" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="space-y-4">
+                                {[...Array(5)].map((_, i) => (
+                                    <div
+                                        key={i}
+                                        className="flex items-center gap-4"
+                                    >
+                                        <Skeleton className="h-9 w-9 rounded-full" />
+                                        <div className="space-y-2 flex-1">
+                                            <Skeleton className="h-4 w-full" />
+                                            <Skeleton className="h-3 w-[60%]" />
+                                        </div>
+                                        <Skeleton className="h-4 w-[50px]" />
+                                    </div>
+                                ))}
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
+
+                {/* Bottom Row Skeleton */}
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+                    {/* Sales By Country */}
+                    <Card className="col-span-4">
+                        <CardHeader>
+                            <Skeleton className="h-6 w-[150px]" />
+                        </CardHeader>
+                        <CardContent>
+                            <Skeleton className="h-[350px] w-full" />
+                        </CardContent>
+                    </Card>
+
+                    {/* Top Products By Country (Placeholder for conditional) */}
+                    <div className="col-span-3 space-y-4">
+                        <Card className="h-full">
+                            <CardHeader>
+                                <Skeleton className="h-6 w-[180px]" />
+                            </CardHeader>
+                            <CardContent>
+                                <div className="space-y-2">
+                                    {[...Array(5)].map((_, i) => (
+                                        <Skeleton
+                                            key={i}
+                                            className="h-12 w-full"
+                                        />
+                                    ))}
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </div>
                 </div>
             </div>
         );
