@@ -14,6 +14,8 @@ export interface KPI {
     totalSales: number;
     totalOrders: number;
     totalCustomers: number;
+    salesTrend?: number;
+    ordersTrend?: number;
 }
 
 export interface CountrySales {
@@ -37,6 +39,11 @@ export interface ProductPerformance {
     sales: number;
     quantity: number;
     price: number;
+}
+
+export interface RegionalDistribution {
+    domestic: number;
+    international: number;
 }
 
 interface ViewMonthlySales {
@@ -84,10 +91,35 @@ export async function loadDashboardData(filters: DashboardFilters = {}) {
         const data = await response.json();
 
         // 1. KPI
+        // Calculate trends from forecast data (monthly history)
+        const monthlyHistory: ViewMonthlySales[] = data.forecastData || [];
+        let salesTrend = 0;
+        let ordersTrend = 0;
+
+        if (monthlyHistory.length >= 2) {
+            const current = monthlyHistory[monthlyHistory.length - 1];
+            const previous = monthlyHistory[monthlyHistory.length - 2];
+
+            if (previous.monthly_revenue > 0) {
+                salesTrend =
+                    ((current.monthly_revenue - previous.monthly_revenue) /
+                        previous.monthly_revenue) *
+                    100;
+            }
+            if (previous.order_count > 0) {
+                ordersTrend =
+                    ((current.order_count - previous.order_count) /
+                        previous.order_count) *
+                    100;
+            }
+        }
+
         const kpi: KPI = {
             totalSales: data.kpi?.totalSales || 0,
             totalOrders: data.kpi?.totalOrders || 0,
             totalCustomers: data.kpi?.totalCustomers || 0,
+            salesTrend,
+            ordersTrend,
         };
 
         // 2. Country Sales
@@ -151,7 +183,7 @@ export async function loadDashboardData(filters: DashboardFilters = {}) {
             }
 
             // Historical
-            points.forEach((item, i) => {
+            points.forEach((item) => {
                 forecastData.push({
                     date: new Date(item.originalDate).toLocaleDateString(
                         undefined,
@@ -185,6 +217,10 @@ export async function loadDashboardData(filters: DashboardFilters = {}) {
             productSales,
             performance: { topPerformers, underperformers },
             forecastData,
+            regionalData: data.regionalData || {
+                domestic: 0,
+                international: 0,
+            },
         };
     } catch (error) {
         console.error("Load Data Error:", error);
