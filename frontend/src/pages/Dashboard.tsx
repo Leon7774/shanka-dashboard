@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
     loadDashboardData,
     KPI,
@@ -24,7 +25,10 @@ import {
     LineChart,
     Line,
     Legend,
+    CartesianGrid,
 } from "recharts";
+
+console.log("Dashboard component loading...");
 import {
     Loader2,
     DollarSign,
@@ -45,10 +49,13 @@ import {
 } from "@/components/ui/select";
 import { LatestSales } from "@/components/LatestSales";
 import { ProductPerformanceModal } from "@/components/ProductPerformanceModal";
+import { TopProductsByCountry } from "@/components/TopProductsByCountry";
+import { DomesticVsInternational } from "@/components/DomesticVsInternational";
 import { supabase } from "@/lib/supabase";
 
 export default function Dashboard() {
     const [kpi, setKpi] = useState<KPI | null>(null);
+    const [excludeUK, setExcludeUK] = useState(false);
     const [countrySales, setCountrySales] = useState<CountrySales[]>([]);
     const [productSales, setProductSales] = useState<ProductSales[]>([]);
     const [forecastData, setForecastData] = useState<ForecastData[]>([]);
@@ -56,7 +63,6 @@ export default function Dashboard() {
         topPerformers: ProductPerformance[];
         underperformers: ProductPerformance[];
     } | null>(null);
-    const [loading, setLoading] = useState(true);
 
     const [dateRange, setDateRange] = useState<{
         start: string;
@@ -73,46 +79,50 @@ export default function Dashboard() {
 
     useEffect(() => {
         async function fetchCountries() {
-            const { data } = await supabase
-                .from("sales")
-                .select("Country")
-                .not("Country", "is", null);
+            const { data, error } = await supabase.rpc("get_unique_countries");
+
+            if (error) {
+                console.error("Error fetching countries:", error);
+                return;
+            }
 
             if (data) {
-                // Get unique countries
+                // supabase-js returns array of objects like [{ country: "Name" }]
+                const countries = data.map(
+                    (item: { country: string }) => item.country
+                );
+                // Deduplicate and sort
                 const uniqueCountries = Array.from(
-                    new Set(data.map((item) => item.Country))
-                ).sort();
+                    new Set(countries)
+                ).sort() as string[];
                 setAvailableCountries(uniqueCountries);
             }
         }
         fetchCountries();
     }, []);
 
+    // React Query implementation
+    const { data, isLoading: loading } = useQuery({
+        queryKey: ["dashboardData", dateRange, selectedCountry],
+        queryFn: () =>
+            loadDashboardData({
+                startDate: dateRange.start ? new Date(dateRange.start) : null,
+                endDate: dateRange.end ? new Date(dateRange.end) : null,
+                country: selectedCountry,
+            }),
+        staleTime: 1000 * 60 * 5, // 5 minutes
+    });
+
     useEffect(() => {
-        async function load() {
-            setLoading(true);
-            try {
-                const data = await loadDashboardData({
-                    startDate: dateRange.start
-                        ? new Date(dateRange.start)
-                        : null,
-                    endDate: dateRange.end ? new Date(dateRange.end) : null,
-                    country: selectedCountry,
-                });
-                setKpi(data.kpi);
-                setCountrySales(data.countrySales);
-                setProductSales(data.productSales);
-                setForecastData(data.forecastData);
-                setPerformance(data.performance);
-            } catch (error) {
-                console.error("Failed to load dashboard data", error);
-            } finally {
-                setLoading(false);
-            }
+        if (data) {
+            setKpi(data.kpi);
+            setCountrySales(data.countrySales);
+            setProductSales(data.productSales);
+            setForecastData(data.forecastData);
+            setPerformance(data.performance);
+            console.log("Regional Data received:", data.regionalData);
         }
-        load();
-    }, [dateRange, selectedCountry]);
+    }, [data]);
 
     if (loading) {
         return (
@@ -179,8 +189,11 @@ export default function Dashboard() {
                         </SelectTrigger>
                         <SelectContent>
                             <SelectItem value="All">All Countries</SelectItem>
-                            {availableCountries.map((country) => (
-                                <SelectItem key={country} value={country}>
+                            {availableCountries.map((country, index) => (
+                                <SelectItem
+                                    key={`${country}-${index}`}
+                                    value={country}
+                                >
                                     {country}
                                 </SelectItem>
                             ))}
@@ -206,7 +219,7 @@ export default function Dashboard() {
             </div>
 
             {/* KPI Cards */}
-            <div className="grid gap-4 md:grid-cols-3">
+            <div className="grid gap-4 md:grid-cols-4">
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium">
@@ -223,7 +236,11 @@ export default function Dashboard() {
                                 : "$0"}
                         </div>
                         <p className="text-xs text-muted-foreground">
-                            +20.1% from last month
+                            {kpi?.salesTrend
+                                ? `${
+                                      kpi.salesTrend > 0 ? "+" : ""
+                                  }${kpi.salesTrend.toFixed(1)}% vs last month`
+                                : "No trend data"}
                         </p>
                     </CardContent>
                 </Card>
@@ -240,7 +257,11 @@ export default function Dashboard() {
                             {kpi?.totalOrders.toLocaleString()}
                         </div>
                         <p className="text-xs text-muted-foreground">
-                            +12% from last month
+                            {kpi?.ordersTrend
+                                ? `${
+                                      kpi.ordersTrend > 0 ? "+" : ""
+                                  }${kpi.ordersTrend.toFixed(1)}% vs last month`
+                                : "No trend data"}
                         </p>
                     </CardContent>
                 </Card>
@@ -257,7 +278,28 @@ export default function Dashboard() {
                             {kpi?.totalCustomers.toLocaleString()}
                         </div>
                         <p className="text-xs text-muted-foreground">
-                            +7% from last month
+                            {/* Trend data unavailable */}
+                        </p>
+                    </CardContent>
+                </Card>
+
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">
+                            Avg. Order Value
+                        </CardTitle>
+                        <DollarSign className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold">
+                            {kpi?.totalSales && kpi?.totalOrders
+                                ? `$${(
+                                      kpi.totalSales / kpi.totalOrders
+                                  ).toFixed(2)}`
+                                : "$0.00"}
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                            Per transaction
                         </p>
                     </CardContent>
                 </Card>
@@ -341,67 +383,102 @@ export default function Dashboard() {
 
             {/* Charts Row */}
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-                {selectedCountry === "All" && (
-                    <Card className="col-span-4">
-                        <CardHeader>
-                            <CardTitle>Sales by Country</CardTitle>
-                            <CardDescription>
-                                Top 10 performing regions
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent className="pl-2">
-                            <div className="w-full h-[350px]">
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <BarChart data={countrySales}>
-                                        <XAxis
-                                            dataKey="country"
-                                            stroke="#888888"
-                                            fontSize={12}
-                                            tickLine={false}
-                                            axisLine={false}
-                                            angle={-45}
-                                            textAnchor="end"
-                                            height={70}
-                                        />
-                                        <YAxis
-                                            stroke="#888888"
-                                            fontSize={12}
-                                            tickLine={false}
-                                            axisLine={false}
-                                            tickFormatter={(value) =>
-                                                `$${value}`
-                                            }
-                                        />
-                                        <Tooltip
-                                            contentStyle={{
-                                                backgroundColor:
-                                                    "var(--background)",
-                                                borderColor: "var(--border)",
-                                                borderRadius: "8px",
-                                            }}
-                                            labelStyle={{
-                                                color: "var(--foreground)",
-                                            }}
-                                            itemStyle={{
-                                                color: "var(--primary)",
-                                            }}
-                                            formatter={(value: number) => [
-                                                `$${value.toLocaleString()}`,
-                                                "Sales",
-                                            ]}
-                                        />
-                                        <Bar
-                                            dataKey="sales"
-                                            fill="currentColor"
-                                            radius={[4, 4, 0, 0]}
-                                            className="fill-primary"
-                                        />
-                                    </BarChart>
-                                </ResponsiveContainer>
-                            </div>
-                        </CardContent>
-                    </Card>
-                )}
+                {selectedCountry === "All" ? (
+                    <>
+                        <Card className="col-span-4">
+                            <CardHeader className="flex flex-row items-center justify-between">
+                                <div>
+                                    <CardTitle>Sales by Country</CardTitle>
+                                    <CardDescription>
+                                        Top 10 performing regions
+                                    </CardDescription>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <input
+                                        type="checkbox"
+                                        id="excludeUK"
+                                        checked={excludeUK}
+                                        onChange={(e) =>
+                                            setExcludeUK(e.target.checked)
+                                        }
+                                        className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                                    />
+                                    <label
+                                        htmlFor="excludeUK"
+                                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                                    >
+                                        Exclude UK
+                                    </label>
+                                </div>
+                            </CardHeader>
+                            <CardContent className="pl-2">
+                                <div className="w-full h-[350px]">
+                                    <ResponsiveContainer
+                                        width="100%"
+                                        height="100%"
+                                    >
+                                        <BarChart
+                                            data={countrySales.filter((c) =>
+                                                excludeUK
+                                                    ? c.country !==
+                                                      "United Kingdom"
+                                                    : true
+                                            )}
+                                        >
+                                            <XAxis
+                                                dataKey="country"
+                                                stroke="#888888"
+                                                fontSize={12}
+                                                tickLine={false}
+                                                axisLine={false}
+                                                angle={-45}
+                                                textAnchor="end"
+                                                height={70}
+                                            />
+                                            <YAxis
+                                                stroke="#888888"
+                                                fontSize={12}
+                                                tickLine={false}
+                                                axisLine={false}
+                                                tickFormatter={(value) =>
+                                                    `$${value}`
+                                                }
+                                            />
+                                            <Tooltip
+                                                contentStyle={{
+                                                    backgroundColor:
+                                                        "var(--background)",
+                                                    borderColor:
+                                                        "var(--border)",
+                                                    borderRadius: "8px",
+                                                }}
+                                                labelStyle={{
+                                                    color: "var(--foreground)",
+                                                }}
+                                                itemStyle={{
+                                                    color: "var(--primary)",
+                                                }}
+                                                formatter={(value: number) => [
+                                                    `$${value.toLocaleString()}`,
+                                                    "Sales",
+                                                ]}
+                                            />
+                                            <Bar
+                                                dataKey="sales"
+                                                fill="currentColor"
+                                                radius={[4, 4, 0, 0]}
+                                                className="fill-primary"
+                                            />
+                                        </BarChart>
+                                    </ResponsiveContainer>
+                                </div>
+                            </CardContent>
+                        </Card>
+                        <div className="col-span-3">
+                            <TopProductsByCountry />
+                        </div>
+                    </>
+                ) : null}
 
                 <Card className="col-span-3 h-full">
                     <div className="flex flex-col h-full gap-4">
@@ -519,16 +596,22 @@ export default function Dashboard() {
                         </div>
                     </div>
                 </Card>
+
+                <div className="w-[400px]">
+                    <DomesticVsInternational data={data?.regionalData} />
+                </div>
             </div>
 
-            <ProductPerformanceModal
-                open={statsModalOpen}
-                onOpenChange={setStatsModalOpen}
-                initialView={statsModalView}
-            />
+            <div className="flex flex-col ">
+                <ProductPerformanceModal
+                    open={statsModalOpen}
+                    onOpenChange={setStatsModalOpen}
+                    initialView={statsModalView}
+                    countryFilter={selectedCountry}
+                    dateRange={dateRange}
+                />
+                {/* New Domestic vs International Chart */}
+            </div>
         </div>
     );
 }
-
-// Helper component for CartesianGrid since it was missing in import above but used in code
-import { CartesianGrid } from "recharts";
