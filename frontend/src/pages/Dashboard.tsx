@@ -44,6 +44,7 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { LatestSales } from "@/components/LatestSales";
+import { ProductPerformanceModal } from "@/components/ProductPerformanceModal";
 import { supabase } from "@/lib/supabase";
 
 export default function Dashboard() {
@@ -63,6 +64,12 @@ export default function Dashboard() {
     }>({ start: "", end: "" });
     const [selectedCountry, setSelectedCountry] = useState<string>("All");
     const [availableCountries, setAvailableCountries] = useState<string[]>([]);
+
+    // Modal State
+    const [statsModalOpen, setStatsModalOpen] = useState(false);
+    const [statsModalView, setStatsModalView] = useState<"top" | "worst">(
+        "top"
+    );
 
     useEffect(() => {
         async function fetchCountries() {
@@ -400,7 +407,19 @@ export default function Dashboard() {
                     <div className="flex flex-col h-full gap-4">
                         <div className="flex-1">
                             <CardHeader>
-                                <CardTitle>Top Products</CardTitle>
+                                <div className="flex items-center justify-between">
+                                    <CardTitle>Top Products</CardTitle>
+                                    <Button
+                                        variant="link"
+                                        className="h-auto p-0 text-primary"
+                                        onClick={() => {
+                                            setStatsModalView("top");
+                                            setStatsModalOpen(true);
+                                        }}
+                                    >
+                                        View All
+                                    </Button>
+                                </div>
                                 <CardDescription>
                                     Best revenue drivers
                                 </CardDescription>
@@ -448,10 +467,22 @@ export default function Dashboard() {
 
                         <div className="flex-1 border-t pt-4">
                             <CardHeader>
-                                <CardTitle className="text-destructive flex items-center gap-2">
-                                    <AlertTriangle className="h-4 w-4" />
-                                    Underperformers
-                                </CardTitle>
+                                <div className="flex items-center justify-between">
+                                    <CardTitle className="text-destructive flex items-center gap-2">
+                                        <AlertTriangle className="h-4 w-4" />
+                                        Underperformers
+                                    </CardTitle>
+                                    <Button
+                                        variant="link"
+                                        className="h-auto p-0 text-destructive"
+                                        onClick={() => {
+                                            setStatsModalView("worst");
+                                            setStatsModalOpen(true);
+                                        }}
+                                    >
+                                        View All
+                                    </Button>
+                                </div>
                                 <CardDescription>
                                     Action needed: Low sales volume
                                 </CardDescription>
@@ -489,6 +520,12 @@ export default function Dashboard() {
                     </div>
                 </Card>
             </div>
+
+            <ProductPerformanceModal
+                open={statsModalOpen}
+                onOpenChange={setStatsModalOpen}
+                initialView={statsModalView}
+            />
         </div>
     );
 }
