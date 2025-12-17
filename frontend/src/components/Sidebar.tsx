@@ -55,54 +55,62 @@ export function Sidebar() {
                 </Button>
             </div>
 
-            <nav className="flex-1 flex flex-col p-2 gap-2">
-                <Link to="/dashboard">
-                    <Button
-                        variant={
-                            location.pathname === "/dashboard"
-                                ? "secondary"
-                                : "ghost"
-                        }
-                        className={cn(
-                            "w-full flex",
-                            collapsed
-                                ? "px-2 justify-center items-center"
-                                : "px-4 justify-start items-center"
-                        )}
-                    >
-                        <LayoutDashboard className="h-5 w-5" />
-                        {!collapsed && <span className="ml-2">Dashboard</span>}
-                    </Button>
-                </Link>
-
-                <Link to="/add-sale">
-                    <Button
-                        variant={
-                            location.pathname === "/add-sale"
-                                ? "secondary"
-                                : "ghost"
-                        }
-                        className={cn(
-                            "w-full flex",
-                            collapsed
-                                ? "px-2 justify-center items-center"
-                                : "px-4 justify-start items-center"
-                        )}
-                    >
-                        <PlusCircle className="h-5 w-5" />
-                        {!collapsed && <span className="ml-2">Add Sale</span>}
-                    </Button>
-                </Link>
-
-                <div className="mt-auto items-center justify-center pt-2 border-t">
-                    <Link to="/">
+            <nav className="flex-1 flex w-[100%] flex-col gap-2">
+                <div className="flex flex-col gap-2 p-2">
+                    <Link to="/dashboard">
                         <Button
-                            variant="ghost"
+                            variant={
+                                location.pathname === "/dashboard"
+                                    ? "secondary"
+                                    : "ghost"
+                            }
                             className={cn(
-                                "w-full flex text-destructive hover:text-destructive hover:bg-destructive/10",
+                                "w-full flex",
                                 collapsed
                                     ? "px-2 justify-center items-center"
                                     : "px-4 justify-start items-center"
+                            )}
+                        >
+                            <LayoutDashboard className="h-5 w-5" />
+                            {!collapsed && (
+                                <span className="ml-2">Dashboard</span>
+                            )}
+                        </Button>
+                    </Link>
+                    <Link to="/add-sale">
+                        <Button
+                            variant={
+                                location.pathname === "/add-sale"
+                                    ? "secondary"
+                                    : "ghost"
+                            }
+                            className={cn(
+                                "w-full flex",
+                                collapsed
+                                    ? "px-2 justify-center items-center"
+                                    : "px-4 justify-start items-center"
+                            )}
+                        >
+                            <PlusCircle className="h-5 w-5" />
+                            {!collapsed && (
+                                <span className="ml-2">Add Sale</span>
+                            )}
+                        </Button>
+                    </Link>
+                </div>
+
+                <div className="mt-auto flex flex-col items-center justify-center border-t">
+                    <Link
+                        to="/"
+                        className="w-full flex flex-row justify-center"
+                    >
+                        <Button
+                            variant="ghost"
+                            className={cn(
+                                "flex w-full text-destructive hover:text-destructive hover:bg-destructive/10 rounded-none",
+                                collapsed
+                                    ? "px-2 justify-center items-center"
+                                    : "px-4 justify-center items-center"
                             )}
                         >
                             <LogOut className="h-5 w-5" />
