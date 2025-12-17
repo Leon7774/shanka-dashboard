@@ -98,7 +98,7 @@ export function LatestSales() {
     return (
         <Card className="h-full">
             <CardHeader>
-                <CardTitle>Live Transactions</CardTitle>
+                <CardTitle>Latest Sales</CardTitle>
                 <CardDescription>
                     Real-time feed of latest orders
                 </CardDescription>
@@ -119,6 +119,10 @@ export function LatestSales() {
                                 </p>
                                 <p className="text-xs text-muted-foreground">
                                     {sale.country} •{" "}
+                                    {new Date(
+                                        sale.timestamp
+                                    ).toLocaleDateString()}{" "}
+                                    •{" "}
                                     {new Date(
                                         sale.timestamp
                                     ).toLocaleTimeString()}
