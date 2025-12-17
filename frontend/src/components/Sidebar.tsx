@@ -6,6 +6,7 @@ import {
     ChevronLeft,
     ChevronRight,
     LogOut,
+    Table,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -17,18 +18,18 @@ export function Sidebar() {
     return (
         <div
             className={cn(
-                "min-h-screen bg-card border-r transition-all duration-300 flex flex-col",
-                collapsed ? "w-16" : "w-64"
+                "min-h-screen bg-card border-r flex flex-col",
+                collapsed ? "w-16" : "w-56"
             )}
         >
-            <div className="p-4 h-20 border-b flex items-center justify-s">
+            <div className="h-20 border-b flex items-center justify-s">
                 {!collapsed && (
-                    <div className="flex items-center gap-3 overflow-hidden px-1">
+                    <div className="flex gap-1 px-1 pl-4">
                         <div className="h-14 flex items-center">
                             <img
                                 src="/2.svg"
                                 alt="Brand Logo"
-                                className="h-full object-cover object-center"
+                                className="h-12"
                             />
                         </div>
                         <div className="h-14 flex flex-col justify-center px-2">
@@ -45,7 +46,10 @@ export function Sidebar() {
                     variant="ghost"
                     size="icon"
                     onClick={() => setCollapsed(!collapsed)}
-                    className="ml-auto"
+                    className={cn(
+                        "ml-auto h-full rounded-none",
+                        collapsed ? "w-16" : "w-12"
+                    )}
                 >
                     {collapsed ? (
                         <ChevronRight className="h-4 w-4" />
@@ -94,6 +98,26 @@ export function Sidebar() {
                             <PlusCircle className="h-5 w-5" />
                             {!collapsed && (
                                 <span className="ml-2">Add Sale</span>
+                            )}
+                        </Button>
+                    </Link>
+                    <Link to="/data-table">
+                        <Button
+                            variant={
+                                location.pathname === "/data-table"
+                                    ? "secondary"
+                                    : "ghost"
+                            }
+                            className={cn(
+                                "w-full flex",
+                                collapsed
+                                    ? "px-2 justify-center items-center"
+                                    : "px-4 justify-start items-center"
+                            )}
+                        >
+                            <Table className="h-5 w-5" />
+                            {!collapsed && (
+                                <span className="ml-2">View Table</span>
                             )}
                         </Button>
                     </Link>
