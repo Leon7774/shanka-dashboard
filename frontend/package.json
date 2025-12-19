@@ -7,7 +7,10 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "dev:100k": "VITE_DEFAULT_DATASET=100k vite",
+    "dev:600k": "VITE_DEFAULT_DATASET=600k vite",
+    "dev:2m": "VITE_DEFAULT_DATASET=2m vite"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.15",

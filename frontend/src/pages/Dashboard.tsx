@@ -70,12 +70,38 @@ export default function Dashboard() {
     }>({ start: "", end: "" });
     const [selectedCountry, setSelectedCountry] = useState<string>("All");
     const [availableCountries, setAvailableCountries] = useState<string[]>([]);
+    const [dataset] = useState<"100k" | "600k" | "2m">(
+        (import.meta.env.VITE_DEFAULT_DATASET as "100k" | "600k" | "2m") || "600k"
+    );
 
     // Modal State
     const [statsModalOpen, setStatsModalOpen] = useState(false);
     const [statsModalView, setStatsModalView] = useState<"top" | "worst">(
         "top"
     );
+
+
+    useEffect(() => {
+        const logPerf = () => {
+            // Using a timeout to ensure loadEventEnd is populated
+            setTimeout(() => {
+                const navEntry = window.performance.getEntriesByType("navigation")[0] as PerformanceNavigationTiming;
+                if (navEntry) {
+                    const ttfb = navEntry.responseStart - navEntry.requestStart;
+                    const pageLoad = navEntry.loadEventEnd > 0 ? (navEntry.loadEventEnd - navEntry.startTime) : 0;
+
+                    console.log(`📊 [Perf] TTFB: ${ttfb.toFixed(0)}ms | Load: ${pageLoad > 0 ? pageLoad.toFixed(0) + 'ms' : 'Pending'}`);
+                }
+            }, 0);
+        };
+
+        if (document.readyState === "complete") {
+            logPerf();
+        } else {
+            window.addEventListener("load", logPerf);
+            return () => window.removeEventListener("load", logPerf);
+        }
+    }, []);
 
     const startTime = useRef(window.performance.now());
 
@@ -105,12 +131,13 @@ export default function Dashboard() {
 
     // React Query implementation
     const { data, isLoading: loading, error } = useQuery<DashboardData>({
-        queryKey: ["dashboardData", dateRange, selectedCountry],
+        queryKey: ["dashboardData", dateRange, selectedCountry, dataset],
         queryFn: () =>
             loadDashboardData({
                 startDate: dateRange.start ? new Date(dateRange.start) : null,
                 endDate: dateRange.end ? new Date(dateRange.end) : null,
                 country: selectedCountry,
+                dataset,
             }),
         staleTime: 1000 * 60 * 5, // 5 minutes
     });
@@ -129,7 +156,7 @@ export default function Dashboard() {
             console.log("Regional Data received:", data.regionalData);
 
             const timeTaken = window.performance.now() - startTime.current;
-            console.log(`🚀 Dashboard Fully Visible (Component Mount -> Data): ${timeTaken.toFixed(2)}ms`);
+            console.log(`🚀 [Perf] TTI (Interactive): ${timeTaken.toFixed(0)}ms`);
         }
     }, [data]);
 
@@ -249,6 +276,7 @@ export default function Dashboard() {
                         <Filter className="h-4 w-4 text-muted-foreground" />
                         <span className="text-sm font-medium">Filters:</span>
                     </div>
+
 
                     <Input
                         type="date"

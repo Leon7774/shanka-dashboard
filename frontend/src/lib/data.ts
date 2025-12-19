@@ -1,4 +1,6 @@
 import { redis } from './redis';
+import { supabase } from './supabase';
+
 export interface RetailRow {
     Id: number;
     InvoiceNo: string | number;
@@ -55,23 +57,20 @@ interface ViewMonthlySales {
     order_count: number;
 }
 
-const API_URL =
-    "https://4jzzibjtu1.execute-api.ap-southeast-2.amazonaws.com/shanka/fetch/sales";
+// const API_URL = "https://4jzzibjtu1.execute-api.ap-southeast-2.amazonaws.com/shanka/fetch/sales"; // Legacy API
 
-interface DashboardFilters {
+export interface DashboardFilters {
     startDate?: Date | null;
     endDate?: Date | null;
     country?: string | null;
+    dataset?: "100k" | "600k" | "2m";
 }
 
-// Helper to format Date to YYYY-MM-DD for API
-function formatDate(date: Date) {
-    return date.toISOString().split("T")[0];
-}
 
 
 export interface DashboardData {
     kpi: KPI;
+    rowCount?: number;
     countrySales: CountrySales[];
     productSales: ProductSales[];
     performance: {
@@ -85,43 +84,39 @@ export interface DashboardData {
 export async function loadDashboardData(filters: DashboardFilters = {}): Promise<DashboardData> {
     try {
         const startTime = performance.now();
-        const params = new URLSearchParams();
-        if (filters.startDate)
-            params.append("startDate", formatDate(filters.startDate));
-        if (filters.endDate)
-            params.append("endDate", formatDate(filters.endDate));
-        if (filters.country && filters.country !== "All")
-            params.append("country", filters.country);
 
         // Cache Key Strategy:
         // Include all filter parameters to ensure unique cache per view
-        const cacheKey = `dashboard:data:${JSON.stringify(filters)}`;
+        const cacheKey = `dashboard:data:v4:${JSON.stringify(filters)}`;
 
-        // 1. Try Cache
-        try {
-            const cached = await redis.get<DashboardData>(cacheKey);
-            if (cached) {
-                const duration = performance.now() - startTime;
-                console.log(`Serving from Redis Cache ⚡️ (took ${duration.toFixed(2)}ms)`);
-                return cached;
-            }
-        } catch (err) {
-            console.warn("Redis Cache Error (continuing to fetch):", err);
+        // // 1. Try Cache
+        // try {
+        //     const cached = await redis.get<DashboardData>(cacheKey);
+        //     if (cached) {
+        //         const duration = performance.now() - startTime;
+        //         console.log(`⚡️ [Perf] Cache Hit: ${duration.toFixed(0)}ms | Rows: ${cached.rowCount}`);
+        //         return cached;
+        //     }
+        // } catch (err) {
+        //     console.warn("Redis Cache Error (continuing to fetch):", err);
+        // }
+
+        console.log("Fetching from Supabase RPC with params:", filters);
+
+        const { data: rawData, error } = await supabase.rpc("get_dashboard_stats", {
+            filter_start_date: filters.startDate ? filters.startDate.toISOString() : null,
+            filter_end_date: filters.endDate ? filters.endDate.toISOString() : null,
+            filter_country: (filters.country && filters.country !== "All") ? filters.country : null,
+            dataset_size: filters.dataset || "600k",
+        });
+
+        if (error) {
+            console.error("Error fetching dashboard data:", error);
+            throw new Error(error.message);
         }
 
-        const response = await fetch(`${API_URL}?${params.toString()}`);
-
-        console.log("Response:", response);
-
-        if (!response.ok) {
-            console.error(
-                "Error fetching dashboard data:",
-                response.statusText
-            );
-            throw new Error("Failed to fetch data");
-        }
-
-        const data = await response.json();
+        const data = rawData;
+        // console.log(`✅ Data Fetched! Dataset: ${filters.dataset || '600k'} | Row Count: ${data.rowCount}`);
 
         // 1. KPI
         // Calculate trends from forecast data (monthly history)
@@ -270,6 +265,7 @@ export async function loadDashboardData(filters: DashboardFilters = {}): Promise
 
         const finalResult: DashboardData = {
             kpi,
+            rowCount: data.rowCount,
             countrySales,
             productSales,
             performance: { topPerformers, underperformers },
@@ -286,7 +282,7 @@ export async function loadDashboardData(filters: DashboardFilters = {}): Promise
         }
 
         const duration = performance.now() - startTime;
-        console.log(`Data fetch completed in ${duration.toFixed(2)}ms`);
+        console.log(`📡 [Perf] API Fetch: ${duration.toFixed(0)}ms | Dataset: ${filters.dataset || '600k'} | Rows: ${data.rowCount}`);
 
         return finalResult;
 
