@@ -1,3 +1,4 @@
+import { redis } from './redis';
 export interface RetailRow {
     Id: number;
     InvoiceNo: string | number;
@@ -77,6 +78,21 @@ export async function loadDashboardData(filters: DashboardFilters = {}) {
             params.append("endDate", formatDate(filters.endDate));
         if (filters.country && filters.country !== "All")
             params.append("country", filters.country);
+
+        // Cache Key Strategy:
+        // Include all filter parameters to ensure unique cache per view
+        const cacheKey = `dashboard:data:${JSON.stringify(filters)}`;
+
+        // 1. Try Cache
+        try {
+            const cached = await redis.get(cacheKey);
+            if (cached) {
+                console.log("Serving from Redis Cache ⚡️");
+                return cached;
+            }
+        } catch (err) {
+            console.warn("Redis Cache Error (continuing to fetch):", err);
+        }
 
         const response = await fetch(`${API_URL}?${params.toString()}`);
 
@@ -237,7 +253,7 @@ export async function loadDashboardData(filters: DashboardFilters = {}) {
             };
         }
 
-        return {
+        const finalResult = {
             kpi,
             countrySales,
             productSales,
@@ -245,6 +261,17 @@ export async function loadDashboardData(filters: DashboardFilters = {}) {
             forecastData,
             regionalData,
         };
+
+        // 2. Set Cache (Fire and forget, or await)
+        try {
+            // Cache for 5 minutes (300 seconds)
+            await redis.set(cacheKey, finalResult, { ex: 300 });
+        } catch (cacheErr) {
+            console.warn("Failed to set Redis cache:", cacheErr);
+        }
+
+        return finalResult;
+
     } catch (error) {
         console.error("Load Data Error:", error);
         throw error;
