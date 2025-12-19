@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
     loadDashboardData,
@@ -6,6 +6,7 @@ import {
     CountrySales,
     ForecastData,
     ProductPerformance,
+    DashboardData,
 } from "@/lib/data";
 import {
     Card,
@@ -76,6 +77,8 @@ export default function Dashboard() {
         "top"
     );
 
+    const startTime = useRef(window.performance.now());
+
     useEffect(() => {
         async function fetchCountries() {
             const { data, error } = await supabase.rpc("get_unique_countries");
@@ -101,7 +104,7 @@ export default function Dashboard() {
     }, []);
 
     // React Query implementation
-    const { data, isLoading: loading } = useQuery({
+    const { data, isLoading: loading, error } = useQuery<DashboardData>({
         queryKey: ["dashboardData", dateRange, selectedCountry],
         queryFn: () =>
             loadDashboardData({
@@ -113,6 +116,10 @@ export default function Dashboard() {
     });
 
     useEffect(() => {
+        console.log("Query State:", { loading, hasData: !!data, error });
+        if (error) {
+            console.error("Query Error:", error);
+        }
         if (data) {
             setKpi(data.kpi);
             setCountrySales(data.countrySales);
@@ -120,6 +127,9 @@ export default function Dashboard() {
             setForecastData(data.forecastData);
             setPerformance(data.performance);
             console.log("Regional Data received:", data.regionalData);
+
+            const timeTaken = window.performance.now() - startTime.current;
+            console.log(`🚀 Dashboard Fully Visible (Component Mount -> Data): ${timeTaken.toFixed(2)}ms`);
         }
     }, [data]);
 
@@ -287,18 +297,18 @@ export default function Dashboard() {
                     {(dateRange.start ||
                         dateRange.end ||
                         selectedCountry !== "All") && (
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-8 px-2 text-destructive hover:text-destructive"
-                            onClick={() => {
-                                setDateRange({ start: "", end: "" });
-                                setSelectedCountry("All");
-                            }}
-                        >
-                            Reset
-                        </Button>
-                    )}
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 px-2 text-destructive hover:text-destructive"
+                                onClick={() => {
+                                    setDateRange({ start: "", end: "" });
+                                    setSelectedCountry("All");
+                                }}
+                            >
+                                Reset
+                            </Button>
+                        )}
                 </div>
             </div>
 
@@ -315,15 +325,14 @@ export default function Dashboard() {
                         <div className="text-2xl font-bold">
                             {kpi?.totalSales
                                 ? `$${kpi.totalSales.toLocaleString(undefined, {
-                                      maximumFractionDigits: 0,
-                                  })}`
+                                    maximumFractionDigits: 0,
+                                })}`
                                 : "$0"}
                         </div>
                         <p className="text-xs text-muted-foreground">
                             {kpi?.salesTrend
-                                ? `${
-                                      kpi.salesTrend > 0 ? "+" : ""
-                                  }${kpi.salesTrend.toFixed(1)}% vs last month`
+                                ? `${kpi.salesTrend > 0 ? "+" : ""
+                                }${kpi.salesTrend.toFixed(1)}% vs last month`
                                 : "No trend data"}
                         </p>
                     </CardContent>
@@ -342,9 +351,8 @@ export default function Dashboard() {
                         </div>
                         <p className="text-xs text-muted-foreground">
                             {kpi?.ordersTrend
-                                ? `${
-                                      kpi.ordersTrend > 0 ? "+" : ""
-                                  }${kpi.ordersTrend.toFixed(1)}% vs last month`
+                                ? `${kpi.ordersTrend > 0 ? "+" : ""
+                                }${kpi.ordersTrend.toFixed(1)}% vs last month`
                                 : "No trend data"}
                         </p>
                     </CardContent>
@@ -378,8 +386,8 @@ export default function Dashboard() {
                         <div className="text-2xl font-bold">
                             {kpi?.totalSales && kpi?.totalOrders
                                 ? `$${(
-                                      kpi.totalSales / kpi.totalOrders
-                                  ).toFixed(2)}`
+                                    kpi.totalSales / kpi.totalOrders
+                                ).toFixed(2)}`
                                 : "$0.00"}
                         </div>
                         <p className="text-xs text-muted-foreground">
@@ -505,7 +513,7 @@ export default function Dashboard() {
                                             data={countrySales.filter((c) =>
                                                 excludeUK
                                                     ? c.country !==
-                                                      "United Kingdom"
+                                                    "United Kingdom"
                                                     : true
                                             )}
                                         >
@@ -681,7 +689,7 @@ export default function Dashboard() {
                     </div>
                 </Card>
                 <Card className="col-span-2">
-                    <DomesticVsInternational data={data?.regionalData} />
+                    <DomesticVsInternational data={data?.regionalData ?? null} />
                 </Card>
                 <Card className="col-span-2">
                     <AverageOrderValueChart data={countrySales} />
@@ -698,3 +706,4 @@ export default function Dashboard() {
         </div>
     );
 }
+

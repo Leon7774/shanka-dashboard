@@ -69,8 +69,22 @@ function formatDate(date: Date) {
     return date.toISOString().split("T")[0];
 }
 
-export async function loadDashboardData(filters: DashboardFilters = {}) {
+
+export interface DashboardData {
+    kpi: KPI;
+    countrySales: CountrySales[];
+    productSales: ProductSales[];
+    performance: {
+        topPerformers: ProductPerformance[];
+        underperformers: ProductPerformance[];
+    };
+    forecastData: ForecastData[];
+    regionalData: RegionalDistribution;
+}
+
+export async function loadDashboardData(filters: DashboardFilters = {}): Promise<DashboardData> {
     try {
+        const startTime = performance.now();
         const params = new URLSearchParams();
         if (filters.startDate)
             params.append("startDate", formatDate(filters.startDate));
@@ -85,9 +99,10 @@ export async function loadDashboardData(filters: DashboardFilters = {}) {
 
         // 1. Try Cache
         try {
-            const cached = await redis.get(cacheKey);
+            const cached = await redis.get<DashboardData>(cacheKey);
             if (cached) {
-                console.log("Serving from Redis Cache ⚡️");
+                const duration = performance.now() - startTime;
+                console.log(`Serving from Redis Cache ⚡️ (took ${duration.toFixed(2)}ms)`);
                 return cached;
             }
         } catch (err) {
@@ -233,7 +248,7 @@ export async function loadDashboardData(filters: DashboardFilters = {}) {
 
         // 5. Regional Data Strategy
         // Try to get direct data, otherwise calculate from available metrics (Fallback)
-        let regionalData = data.regionalData;
+        let regionalData: RegionalDistribution = data.regionalData;
 
         if (
             !regionalData ||
@@ -253,7 +268,7 @@ export async function loadDashboardData(filters: DashboardFilters = {}) {
             };
         }
 
-        const finalResult = {
+        const finalResult: DashboardData = {
             kpi,
             countrySales,
             productSales,
@@ -270,6 +285,9 @@ export async function loadDashboardData(filters: DashboardFilters = {}) {
             console.warn("Failed to set Redis cache:", cacheErr);
         }
 
+        const duration = performance.now() - startTime;
+        console.log(`Data fetch completed in ${duration.toFixed(2)}ms`);
+
         return finalResult;
 
     } catch (error) {
@@ -277,3 +295,4 @@ export async function loadDashboardData(filters: DashboardFilters = {}) {
         throw error;
     }
 }
+
